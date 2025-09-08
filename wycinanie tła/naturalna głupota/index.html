@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pl">
+<body>
+  <div style="margin-bottom:8px;">
+    <input id="fileInput" type="file" accept="image/*">
+    <button id="useDefault">Użyj domyślnego obrazu</button>
+  </div>
+
+  <div id="wrap" style="position:relative; display:inline-block;">
+    <canvas id="kanwa" width="500" height="500" style="border:1px solid #f00; display:block;"></canvas>
+    <canvas id="overlay" width="500" height="500" style="position:absolute; left:0; top:0; pointer-events:none;"></canvas>
+  </div>
+
+  <script>
+    const c = document.getElementById('kanwa');
+    const ctx = c.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const octx = overlay.getContext('2d');
+
+    // początkowy obraz (domyślny) - funkcja do wygenerowania
+    function drawDefault() {
+      ctx.fillStyle = 'white'; ctx.fillRect(0,0,c.width,c.height);
+      ctx.fillStyle = 'lightblue'; ctx.fillRect(50,50,200,100);
+      ctx.fillStyle = 'red'; ctx.beginPath(); ctx.arc(350,150,40,0,Math.PI*2); ctx.fill();
+    }
+
+    drawDefault();
+
+    let imgData = ctx.getImageData(0,0,c.width,c.height);
+    let img = imgData.data;
+    const isWhite = (r,g,b,a) => a === 0 || (r === 255 && g === 255 && b === 255);
+
+    // skanery - utrzymujemy resetowalne ustawienia
+    const scannersTemplate = () => ([
+      { name: 'left',   x: 0,         y: 0, dx: +1, dy:  0, mode: 'vertical',   active: true, found: false, color: 'rgba(255,0,0,0.9)', foundPos: null, foundTime: 0 },
+      { name: 'right',  x: c.width-1, y: 0, dx: -1, dy:  0, mode: 'vertical',   active: true, found: false, color: 'rgba(0,0,255,0.9)', foundPos: null, foundTime: 0 },
+      { name: 'top',    x: 0,         y: 0, dx:  0, dy: +1, mode: 'horizontal', active: true, found: false, color: 'rgba(0,200,0,0.9)', foundPos: null, foundTime: 0 },
+      { name: 'bottom', x: 0,         y: c.height-1, dx:0, dy: -1, mode: 'horizontal', active: true, found: false, color: 'rgba(255,165,0,0.9)', foundPos: null, foundTime: 0 }
+    ]);
+    let scanners = scannersTemplate();
+
+    const batchPerFrame = 12;
+    let trailMap = Object.create(null);
+
+    function resetOverlayAndTrails() {
+      trailMap = Object.create(null);
+      octx.clearRect(0,0,overlay.width, overlay.height);
+    }
+
+    function markTrail(side, x, y) {
+      if (x < 0 || y < 0 || x >= c.width || y >= c.height) return;
+      const key = x + ',' + y;
+      const entry = trailMap[key] || { x, y, left: false, right: false, top: false, bottom: false };
+      entry[side] = true;
+      trailMap[key] = entry;
+
+      // rysuj na overlay w trybie addytywnym; używamy pełnych kolorów (bez alfa)
+      octx.globalCompositeOperation = 'lighter';
+      const size = 4; // nieco większy, żeby lepiej widzieć nakładanie
+      if (side === 'left')  { octx.fillStyle = 'rgb(255,0,0)';     octx.fillRect(x - 1, y - 1, size, size); }
+      if (side === 'right') { octx.fillStyle = 'rgb(0,0,255)';     octx.fillRect(x - 1, y - 1, size, size); }
+      if (side === 'top')   { octx.fillStyle = 'rgb(0,200,0)';     octx.fillRect(x - 1, y - 1, size, size); }
+      if (side === 'bottom'){ octx.fillStyle = 'rgb(255,165,0)';   octx.fillRect(x - 1, y - 1, size, size); }
+      octx.globalCompositeOperation = 'source-over';
+    }
+
+    function drawAll(timestamp) {
+      ctx.putImageData(imgData, 0, 0);
+
+      for (const s of scanners) {
+        if (s.active && s.x >= 0 && s.x < c.width && s.y >= 0 && s.y < c.height) {
+          ctx.fillStyle = s.color;
+          ctx.fillRect(s.x - 2, s.y - 2, 5, 5);
+        }
+      }
+
+      for (const s of scanners) {
+        if (s.found && s.foundPos) {
+          const t = (timestamp - s.foundTime) / 350;
+          const pulse = 1 + Math.sin(t) * 0.45;
+          const outer = Math.round(18 * pulse);
+          const inner = Math.round(9 * pulse);
+
+          ctx.beginPath(); ctx.fillStyle = 'white';
+          ctx.arc(s.foundPos.x + 0.5, s.foundPos.y + 0.5, outer, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.fillStyle = s.color;
+          ctx.arc(s.foundPos.x + 0.5, s.foundPos.y + 0.5, inner, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    }
+
+    // kontrola animacji
+    let rafId = null;
+    function stopAnimation() { if (rafId) cancelAnimationFrame(rafId); rafId = null; }
+
+    function scanStep(timestamp) {
+      let anyActive = false;
+      for (const s of scanners) {
+        if (!s.active || s.found) continue;
+        anyActive = true;
+        let processed = 0;
+        while (processed < batchPerFrame && !s.found) {
+          if (s.x < 0 || s.x >= c.width || s.y < 0 || s.y >= c.height) { s.active = false; break; }
+
+          const i = (s.y * c.width + s.x) * 4;
+          const r = img[i], g = img[i+1], b = img[i+2], a = img[i+3];
+
+          markTrail(s.name, s.x, s.y);
+
+          if (!isWhite(r,g,b,a)) {
+            s.found = true;
+            s.foundPos = { x: s.x, y: s.y };
+            s.foundTime = performance.now();
+            console.log('Skaner', s.name, 'znalazł nie-biały piksel:', s.x, s.y, 'RGBA=', r, g, b, a);
+            break;
+          }
+
+          if (s.mode === 'vertical') {
+            s.y++;
+            if (s.y >= c.height) {
+              s.y = 0; s.x += s.dx;
+              if (s.x < 0 || s.x >= c.width) { s.active = false; break; }
+            }
+          } else {
+            s.x++;
+            if (s.x >= c.width) {
+              s.x = 0; s.y += s.dy;
+              if (s.y < 0 || s.y >= c.height) { s.active = false; break; }
+            }
+          }
+
+          processed++;
+        }
+      }
+
+      drawAll(timestamp);
+      const anyFound = scanners.some(s => s.found);
+      if (anyActive || anyFound) rafId = requestAnimationFrame(scanStep);
+      else rafId = null;
+    }
+
+    function resetScanners() {
+      stopAnimation();
+      scanners = scannersTemplate();
+      resetOverlayAndTrails();
+      imgData = ctx.getImageData(0,0,c.width,c.height);
+      img = imgData.data;
+      rafId = requestAnimationFrame(scanStep);
+    }
+
+    // wczytywanie obrazu z pliku i rysowanie skalowane do kanwy
+    const fileInput = document.getElementById('fileInput');
+    fileInput.addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const im = new Image();
+        im.onload = () => {
+          // dopasuj obraz do rozmiaru kanwy (skalowanie)
+          ctx.clearRect(0,0,c.width,c.height);
+          ctx.drawImage(im, 0, 0, c.width, c.height);
+          resetScanners();
+        };
+        im.src = ev.target.result;
+      };
+      reader.readAsDataURL(f);
+    });
+
+    // przycisk przywracający domyślny obraz
+    document.getElementById('useDefault').addEventListener('click', () => {
+      ctx.clearRect(0,0,c.width,c.height);
+      drawDefault();
+      resetScanners();
+    });
+
+    // uruchom początkowy skan
+    resetScanners();
+  </script>
+</body>
+</html>
