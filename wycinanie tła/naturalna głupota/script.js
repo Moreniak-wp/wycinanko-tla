@@ -204,3 +204,4 @@ function findObjectBoundsJS(image) {
     };
 }
 */
+//panie marcepanie przepraszam bardzo ale to ty zdychasz i nic nie robisz kiedy ja robie, btw zdałem sobie sprawę że usuwamy tylko kolumny
