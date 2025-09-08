@@ -47,3 +47,6 @@
     link.href = canvas.toDataURL('image/png');
     link.click();
   });
+
+
+  // co ja robię tu, u u
