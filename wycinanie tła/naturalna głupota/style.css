@@ -1,18 +1,99 @@
- body {
-    cursor: help;
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 20px;}
-  #controls {
-    margin-bottom: 20px;}
-  canvas {
-    border: 1px solid #ccc;
-    margin-top: 20px;}
-  button {
-    margin: 5px;
-    padding: 10px 20px;
-    font-size: 16px;}
-  input[type="range"] {
-    width: 200px;}
-  input[type="file"] {
-    margin: 10px 0;}
+/* Nowy, ładniejszy styl */
+:root{
+  --bg-1: #f6f9ff;
+  --bg-2: #e8f0ff;
+  --card: #ffffff;
+  --accent: #4b6ef6;
+  --muted: #6b7280;
+  --shadow: 0 6px 20px rgba(38,38,63,0.08);
+}
+
+html,body{height:100%;}
+body {
+  margin:0;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  background: linear-gradient(180deg,var(--bg-1),var(--bg-2));
+  color:#1f2937;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:32px;
+}
+.container{
+  width:100%;
+  max-width:1100px;
+}
+header{
+  text-align:center;
+  margin-bottom:18px;
+}
+h1{
+  margin:0 0 6px 0;
+  font-size:28px;
+  letter-spacing:-0.3px;
+}
+p.lead{color:var(--muted); margin:0 0 12px 0}
+
+#controls{
+  background:var(--card);
+  border-radius:12px;
+  padding:16px 18px;
+  box-shadow:var(--shadow);
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.controls-left{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.controls-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+input[type="file"]{border-radius:8px;padding:8px;background:#fbfdff;border:1px solid #e6eefc}
+
+label{font-size:14px;color:var(--muted)}
+
+input[type="range"]{width:220px;accent-color:var(--accent)}
+#toleranceValue{font-weight:600;color:var(--accent);min-width:36px;text-align:center}
+
+button{
+  background:var(--accent);
+  color:white;
+  border:none;
+  padding:10px 14px;
+  border-radius:10px;
+  cursor:pointer;
+  box-shadow:0 6px 18px rgba(75,110,246,0.18);
+  font-weight:600;
+}
+button.secondary{background:#efefef;color:#333;box-shadow:none}
+
+.controls-row{display:flex;gap:10px;align-items:center}
+.checkbox{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.checkbox input{width:16px;height:16px}
+
+canvas{
+  border-radius:10px;
+  box-shadow:0 10px 30px rgba(20,23,66,0.08);
+  background:white;
+  max-width:100%;
+  height:auto;
+  border:1px solid rgba(0,0,0,0.06);
+}
+
+.canvas-wrap{
+  display:flex;
+  gap:18px;
+  margin-top:20px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+canvas#Konowo{max-width:640px}
+canvas#Kanawa{max-width:320px}
+
+@media (max-width:720px){
+  #controls{flex-direction:column;align-items:stretch}
+  .controls-right{margin-left:0;justify-content:space-between}
+  .canvas-wrap{flex-direction:column}
+}

@@ -7,23 +7,47 @@
   <link rel="stylesheet" href="style.css"></link>
 </head>
 <body>
-  <h1>Naturalna głupota</h1>
-  1. Wczytanie obrazu do canvas<br> 
+  <div class="container">
+    <header>
+      <h1>Naturalna głupota</h1>
+      <p class="lead">Usuń jednorodne kolumny i wiersze tła, skalując obraz w poziomie i pionie.</p>
+    </header>
+
     <div id="controls">
+      <div class="controls-left">
         <input type="file" id="imageInput" accept="image/*">
-        <br><br>
-        <label for="tolerance">Tolerancja kolorów (0-255): </label>
-        <input type="range" id="tolerance" min="0" max="255" value="69">
-        <span id="toleranceValue">69</span>
-        <br><br>
-        <button id="processBtn">Przedwóz</button>
-        <button id="downloadBtn">solution downolanden</button> 
-        <!--aktualnie pobiera tylko to co wrzucamy-->
+
+        <div class="controls-row">
+          <label for="tolerance">Tolerancja kolorów (0-255): </label>
+          <input type="range" id="tolerance" min="0" max="255" value="69">
+          <span id="toleranceValue">69</span>
+        </div>
+
+        <div class="controls-row checkbox">
+          <label class="checkbox"><input type="checkbox" id="removeColumns" checked> Usuwaj kolumny</label>
+          <label class="checkbox"><input type="checkbox" id="removeRows" checked> Usuwaj wiersze</label>
+        </div>
+      </div>
+
+      <div class="controls-right">
+        <button id="processBtn">Przetwórz</button>
+        <button id="downloadBtn" class="secondary">Pobierz</button>
+      </div>
     </div>
-<div>  <canvas id="Kanawa" width="500" height="500">
-    test 
-    <!--NIE TYKAJ BO ZAJEBIE!!!!!!!!!! - Marcel -->
-  </canvas> <canvas id="Konowo" width="500" height="500"></canvas>  </div>
+
+    <div class="canvas-wrap">
+      <div>
+        <h4 style="text-align:center;margin:8px 0 6px 0;color:var(--muted);font-weight:600">Oryginał</h4>
+        <canvas id="Kanawa" width="500" height="500"></canvas>
+      </div>
+
+      <div>
+        <h4 style="text-align:center;margin:8px 0 6px 0;color:var(--muted);font-weight:600">Przetworzony</h4>
+        <canvas id="Konowo" width="500" height="500"></canvas>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
