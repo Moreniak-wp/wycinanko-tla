@@ -21,5 +21,13 @@
   <canvas id="Kanawa" width="500" height="500">
     test
   </canvas>
+  <script> 
+    const imageInput = document.getElementById('imageInput');
+        const toleranceSlider = document.getElementById('tolerance');
+        const toleranceValue = document.getElementById('toleranceValue');
+          toleranceSlider.addEventListener('input', function() {
+            toleranceValue.textContent = this.value;
+        });
+  </script>
 </body>
 </html>
