@@ -2,6 +2,7 @@
   const toleranceSlider = document.getElementById('tolerance');
   const toleranceValue = document.getElementById('toleranceValue');
   const canvas = document.getElementById('Kanawa');
+  const processedCanvas = DocumentFragment.getElementById('Konowo')
   const ctx = canvas.getContext('2d');
   let currentImage = null;
 // mądre rzeczy
