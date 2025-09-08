@@ -1,11 +1,11 @@
 /* Nowy, ładniejszy styl */
 :root{
-  --bg-1: #f6f9ff;
-  --bg-2: #e8f0ff;
-  --card: #ffffff;
-  --accent: #4b6ef6;
-  --muted: #6b7280;
-  --shadow: 0 6px 20px rgba(38,38,63,0.08);
+  --bg-1: #6b6868;
+  --bg-2: #6b6868;
+  --card: #97c9f8;
+  --accent: #fbff00;
+  --muted: #184db8;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
 html,body{height:100%;}
