@@ -8,11 +8,16 @@
 <body>
   <h1>Naturalna głupota</h1>
   1. Wczytanie obrazu do canvas<br> 
-  <div id="uploadArea">
-test123
-jestem divem w którym będzie można upuścić plik z obrazem
-ale narazie jestem debilem jebanym więc nie wiem jak to dodać
-  </div>
+    <div id="controls">
+        <input type="file" id="imageInput" accept="image/*">
+        <br><br>
+        <label for="tolerance">Tolerancja kolorów (0-255): </label>
+        <input type="range" id="tolerance" min="0" max="255" value="10">
+        <span id="toleranceValue">10</span>
+        <br><br>
+        <button id="processBtn">Przedwóz</button>
+        <button id="downloadBtn">solution downolanden</button>
+    </div>
   <canvas id="Kanawa" width="500" height="500">
     test
   </canvas>
