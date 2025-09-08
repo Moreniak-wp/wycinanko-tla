@@ -124,7 +124,7 @@ for (let y = 1; y < height; y++) {
   // Guzik pobierz
   document.getElementById('downloadBtn').addEventListener('click', function() {
   if (!processedCanvas.width) {
-    alert('Przedwóż obraz');
+    alert('Najpierw przetwórz obraz!');
     return;
   }
   const link = document.createElement('a');
@@ -132,12 +132,6 @@ for (let y = 1; y < height; y++) {
   link.href = processedCanvas.toDataURL('image/png');
   link.click();
 });
-    if (!canvas) return;
-    const link = document.createElement('a');
-    link.download = 'image.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  });
 
 
   // co ja robię tu, u u
