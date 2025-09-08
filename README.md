@@ -1,0 +1,1 @@
+Ogólnie to to będzie miało wycinać większą część tła i ten teges, jak na razie jeszcze nie działa
