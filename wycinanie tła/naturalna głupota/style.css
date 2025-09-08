@@ -1,4 +1,5 @@
  body {
+    cursor: wait;
     font-family: Arial, sans-serif;
     text-align: center;
     margin: 20px;}
@@ -10,8 +11,7 @@
   button {
     margin: 5px;
     padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;}
+    font-size: 16px;}
   input[type="range"] {
     width: 200px;}
   input[type="file"] {
