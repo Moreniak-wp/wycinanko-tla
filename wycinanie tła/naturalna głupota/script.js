@@ -1,4 +1,4 @@
-  const imageInput = document.getElementById('imageInput');
+const imageInput = document.getElementById('imageInput');
   const toleranceSlider = document.getElementById('tolerance');
   const toleranceValue = document.getElementById('toleranceValue');
   const canvas = document.getElementById('Kanawa');
@@ -66,10 +66,38 @@ for (let y = 1; y < height; y++) {
 }
 
 
+function isRowUniform(imageData, y, width, height, tolerance) {
+  // Jeśli szerokość jest za mała, nie traktujemy jako jednorodny wiersz
+  if (width < 2) return false;
+
+  // pierwszy piksel z wiersza
+  const firstPixelIndex = (y * width + 0) * 4;
+  const firstColor = {
+    r: imageData.data[firstPixelIndex],
+    g: imageData.data[firstPixelIndex + 1],
+    b: imageData.data[firstPixelIndex + 2]
+  };
+
+  // porównaj pozostałe piksele w wierszu
+  for (let x = 1; x < width; x++) {
+    const pixelIndex = (y * width + x) * 4;
+    const currentColor = {
+      r: imageData.data[pixelIndex],
+      g: imageData.data[pixelIndex + 1],
+      b: imageData.data[pixelIndex + 2]
+    };
+
+    if (!colorsAreSimilar(firstColor, currentColor, tolerance)) {
+      return false;
+    }
+  }
+  return true;
+}
+
   // Przetwarzanie obrazu 
  document.getElementById('processBtn').addEventListener('click', function() {
   if (!currentImage) {
-    alert('Zapomniałeś chyba plik wybrać');
+    alert('Czy tobie się wąski sufit na łeb nie spadł? Plik daj najpierw dzbanie jeden');
     return;
   }
 
@@ -80,36 +108,67 @@ for (let y = 1; y < height; y++) {
   // Pobierz dane pikseli z ich dowodu osobistego
   const imageData = ctx.getImageData(0, 0, width, height);
 
-  //sprawdź jakie kolumny oszczędzić podczas ludobójstwa
+  // Opcje: czy usuwać kolumny/wiersze. Jeśli checkboxy nie istnieją, domyślnie robimy obydwa
+  const removeColumnsEl = document.getElementById('removeColumns');
+  const removeRowsEl = document.getElementById('removeRows');
+  const doRemoveColumns = removeColumnsEl ? removeColumnsEl.checked : true;
+  const doRemoveRows = removeRowsEl ? removeRowsEl.checked : true;
+
+  if (!doRemoveColumns && !doRemoveRows) {
+    alert('Wybierz przynajmniej jedną opcję: usuwanie kolumn lub wierszy');
+    return;
+  }
+
+  // sprawdź jakie kolumny oszczędzić podczas ludobójstwa (poziome skalowanie)
   const columnsToKeep = [];
-  for (let x = 0; x < width; x++) {
-    if (!isColumnUniform(imageData, x, width, height, tolerance)) {
-      columnsToKeep.push(x);
+  if (doRemoveColumns) {
+    for (let x = 0; x < width; x++) {
+      if (!isColumnUniform(imageData, x, width, height, tolerance)) {
+        columnsToKeep.push(x);
+      }
     }
+  } else {
+    // zostaw wszystkie kolumny
+    for (let x = 0; x < width; x++) columnsToKeep.push(x);
+  }
+
+  // sprawdź jakie wiersze oszczędzić (pionowe skalowanie)
+  const rowsToKeep = [];
+  if (doRemoveRows) {
+    for (let y = 0; y < height; y++) {
+      if (!isRowUniform(imageData, y, width, height, tolerance)) {
+        rowsToKeep.push(y);
+      }
+    }
+  } else {
+    // zostaw wszystkie wierszE
+    for (let y = 0; y < height; y++) rowsToKeep.push(y);
   }
 
   console.log(`Usunięto ${width - columnsToKeep.length} kolumn z ${width}`);
+  console.log(`Usunięto ${height - rowsToKeep.length} wierszy z ${height}`);
 
-  if (columnsToKeep.length === 0) {
+  if (columnsToKeep.length === 0 || rowsToKeep.length === 0) {
     alert('No chyba cię coś boli');
     return;
   }
   
-    // Nowy obraz na żydzie
-    const newWidth = columnsToKeep.length;
+  // Nowy obraz po usunięciu jednorodnych kolumn i wierszy
+  const newWidth = columnsToKeep.length;
+  const newHeight = rowsToKeep.length;
   processedCanvas.width = newWidth;
-  processedCanvas.height = height;
+  processedCanvas.height = newHeight;
 
-  const newImageData = processedCtx.createImageData(newWidth, height);
+  const newImageData = processedCtx.createImageData(newWidth, newHeight);
 
-  //masowa emigracja 
-  // Kopiuj piksele z zachowanych kolumn
-  for (let y = 0; y < height; y++) {
+  // Kopiuj piksele z zachowanych kolumn i wierszy (skalowanie w pionie i poziomie)
+  for (let newY = 0; newY < newHeight; newY++) {
+    const oldY = rowsToKeep[newY];
     for (let newX = 0; newX < newWidth; newX++) {
       const oldX = columnsToKeep[newX];
       
-      const oldIndex = (y * width + oldX) * 4;
-      const newIndex = (y * newWidth + newX) * 4;
+      const oldIndex = (oldY * width + oldX) * 4;
+      const newIndex = (newY * newWidth + newX) * 4;
 
       newImageData.data[newIndex] = imageData.data[oldIndex];         // R
       newImageData.data[newIndex + 1] = imageData.data[oldIndex + 1]; // G
