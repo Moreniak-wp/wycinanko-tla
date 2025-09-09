@@ -13,30 +13,41 @@
       <p class="lead">Usuń jednorodne kolumny i wiersze tła, skalując obraz w poziomie i pionie.</p>
     </header>
 
-    <div id="controls">
+    <div id="controls" class="controls-card">
       <div class="controls-left">
-        <input type="file" id="imageInput" accept="image/*">
-
-        <div class="controls-row">
-          <label for="tolerance">Tolerancja kolorów (0-255): </label>
-          <input type="range" id="tolerance" min="0" max="255" value="69">
-          <span id="toleranceValue">69</span>
+        <div class="file-input-wrap">
+          <label class="file-label">Wybierz obraz
+            <input type="file" id="imageInput" accept="image/*">
+          </label>
         </div>
 
-        <div class="controls-row checkbox">
-          <label class="checkbox"><input type="checkbox" id="removeColumns" checked> Usuwaj kolumny</label>
-          <label class="checkbox"><input type="checkbox" id="removeRows" checked> Usuwaj wiersze</label>
+        <div class="controls-group">
+          <label for="tolerance">Tolerancja kolorów</label>
+          <div class="controls-row">
+            <input type="range" id="tolerance" min="0" max="255" value="69">
+            <span id="toleranceValue">69</span>
+          </div>
         </div>
-        <div>
-  <label for="margin">granica Państwa Polskiego:</label>
-  <input type="range" id="margin" min="0" max="50" value="5">
-  <span id="marginValue">5</span> bikseli
-</div>
+
+        <div class="controls-group">
+          <label for="margin">Margines</label>
+          <div class="controls-row">
+            <input type="range" id="margin" min="0" max="50" value="5">
+            <span id="marginValue">5</span>
+          </div>
+        </div>
+
+        <div class="controls-group checkbox">
+          <label><input type="checkbox" id="removeColumns" checked> Usuwaj kolumny</label>
+          <label><input type="checkbox" id="removeRows" checked> Usuwaj wiersze</label>
+        </div>
       </div>
 
       <div class="controls-right">
-        <button id="processBtn">Przetwórz</button>
-        <button id="downloadBtn" class="secondary">Pobierz</button>
+        <div class="buttons">
+          <button id="processBtn" class="primary">Przetwórz</button>
+          <button id="downloadBtn" class="secondary">Pobierz</button>
+        </div>
         <div id="sampleColorBox" class="sample-box" title="Kliknij na obraz, aby spróbkować koloru">Kliknij obraz</div>
       </div>
     </div>
