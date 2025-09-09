@@ -196,10 +196,10 @@ document.getElementById('processBtn').addEventListener('click', function() {
       const oldIndex = (oldY * width + oldX) * 4;
       const newIndex = (newY * newWidth + newX) * 4;
 
-      newImageData.data[newIndex] = imageData.data[oldIndex];         // R
-      newImageData.data[newIndex + 1] = imageData.data[oldIndex + 1]; // G
-      newImageData.data[newIndex + 2] = imageData.data[oldIndex + 2]; // B
-      newImageData.data[newIndex + 3] = imageData.data[oldIndex + 3]; // A
+      newImageData.data[newIndex] = imageData.data[oldIndex];         // Krew
+      newImageData.data[newIndex + 1] = imageData.data[oldIndex + 1]; // Trawa
+      newImageData.data[newIndex + 2] = imageData.data[oldIndex + 2]; // Niebo
+      newImageData.data[newIndex + 3] = imageData.data[oldIndex + 3]; // Powietrze
     }
   }
 
