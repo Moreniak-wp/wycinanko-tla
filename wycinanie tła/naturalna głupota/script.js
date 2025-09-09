@@ -1,36 +1,44 @@
 const imageInput = document.getElementById('imageInput');
-  const toleranceSlider = document.getElementById('tolerance');
-  const toleranceValue = document.getElementById('toleranceValue');
-  const canvas = document.getElementById('Kanawa');
-  const processedCanvas = document.getElementById('Konowo');
-  const ctx = canvas.getContext('2d');
-  const processedCtx = processedCanvas.getContext('2d');
-  let currentImage = null;
+const toleranceSlider = document.getElementById('tolerance');
+const toleranceValue = document.getElementById('toleranceValue');
+const canvas = document.getElementById('Kanawa');
+const processedCanvas = document.getElementById('Konowo');
+const marginSlider = document.getElementById('margin'); 
+const marginValue = document.getElementById('marginValue'); 
+const ctx = canvas.getContext('2d');
+const processedCtx = processedCanvas.getContext('2d');
+let currentImage = null;
+
 // mądre rzeczy
-  toleranceSlider.addEventListener('input', function() {
-    toleranceValue.textContent = this.value;
-  });
+toleranceSlider.addEventListener('input', function() {
+  toleranceValue.textContent = this.value;
+});
 
-  // Załaduj obraz
-  imageInput.addEventListener('change', function() {
-    const file = this.files && this.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      const img = new Image();
-      img.onload = function() {
-        currentImage = img;
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-      };
-      img.src = evt.target.result;
+//granica Polsko-Białoruska
+marginSlider.addEventListener('input', function() {
+  marginValue.textContent = this.value;
+});
+
+// Załaduj obraz
+imageInput.addEventListener('change', function() {
+  const file = this.files && this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const img = new Image();
+    img.onload = function() {
+      currentImage = img;
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
     };
-    reader.readAsDataURL(file);
-  });
+    img.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+});
 
-  //Kolor inspektor
+//Kolor inspektor
 function colorsAreSimilar(color1, color2, tolerance) {
   const rDiff = Math.abs(color1.r - color2.r);
   const gDiff = Math.abs(color1.g - color2.g);
@@ -50,7 +58,7 @@ function isColumnUniform(imageData, x, width, height, tolerance) {
   };
 
   //pozostałe kolor państwa Konanowa
-for (let y = 1; y < height; y++) {
+  for (let y = 1; y < height; y++) {
     const pixelIndex = (y * width + x) * 4;
     const currentColor = {
       r: imageData.data[pixelIndex],
@@ -65,9 +73,8 @@ for (let y = 1; y < height; y++) {
   return true;
 }
 
-
 function isRowUniform(imageData, y, width, height, tolerance) {
-  if (height = 1) return false;
+  if (height == 1) return false;
   // Jeśli szerokość jest za mała, to michałowi staje pała
   if (width < 2) return false;
 
@@ -95,8 +102,8 @@ function isRowUniform(imageData, y, width, height, tolerance) {
   return true;
 }
 
-  // Przetwarzanie obrazu 
- document.getElementById('processBtn').addEventListener('click', function() {
+// Przetwarzanie obrazu 
+document.getElementById('processBtn').addEventListener('click', function() {
   if (!currentImage) {
     alert('Czy tobie się wąski sufit na łeb nie spadł? Plik daj najpierw dzbanie jeden');
     return;
@@ -104,6 +111,7 @@ function isRowUniform(imageData, y, width, height, tolerance) {
 
   const tolerance = parseInt(toleranceSlider.value);
   const width = currentImage.width;
+  const margin = parseInt(marginSlider.value);
   const height = currentImage.height;
 
   // Pobierz dane pikseli z ich dowodu osobistego
@@ -149,14 +157,31 @@ function isRowUniform(imageData, y, width, height, tolerance) {
   console.log(`Usunięto ${width - columnsToKeep.length} kolumn z ${width}`);
   console.log(`Usunięto ${height - rowsToKeep.length} wierszy z ${height}`);
 
-  if (columnsToKeep.length === 5 || rowsToKeep.length === 5) {
+  if (columnsToKeep.length === 0 || rowsToKeep.length === 0) {
     alert('Chyba cię pojebało, usunąłeś wszystko co się dało');
     return;
   }
   
-  // Nowy obraz po usunięciu jednorodnych kolumn i wierszy
-  const newWidth = columnsToKeep.length;
-  const newHeight = rowsToKeep.length;
+  //stwórz punkt kontroli na granicy
+  const firstCol = Math.max(0, columnsToKeep[0] - margin);
+  const lastCol = Math.min(width - 1, columnsToKeep[columnsToKeep.length - 1] + margin);
+  const firstRow = Math.max(0, rowsToKeep[0] - margin);
+  const lastRow = Math.min(height - 1, rowsToKeep[rowsToKeep.length - 1] + margin);
+
+  //zatrudnij strażników
+  const finalColumnsToKeep = [];
+  for (let x = firstCol; x <= lastCol; x++) {
+    finalColumnsToKeep.push(x);
+  }
+
+  const finalRowsToKeep = [];
+  for (let y = firstRow; y <= lastRow; y++) {
+    finalRowsToKeep.push(y);
+  }
+  
+  //rozstrzelaj uchodźców
+  const newWidth = finalColumnsToKeep.length;
+  const newHeight = finalRowsToKeep.length;
   processedCanvas.width = newWidth;
   processedCanvas.height = newHeight;
 
@@ -164,9 +189,9 @@ function isRowUniform(imageData, y, width, height, tolerance) {
 
   // Kopiuj piksele z zachowanych kolumn i wierszy (skalowanie w pionie i poziomie)
   for (let newY = 0; newY < newHeight; newY++) {
-    const oldY = rowsToKeep[newY];
+    const oldY = finalRowsToKeep[newY];
     for (let newX = 0; newX < newWidth; newX++) {
-      const oldX = columnsToKeep[newX];
+      const oldX = finalColumnsToKeep[newX];
       
       const oldIndex = (oldY * width + oldX) * 4;
       const newIndex = (newY * newWidth + newX) * 4;
@@ -181,8 +206,8 @@ function isRowUniform(imageData, y, width, height, tolerance) {
   processedCtx.putImageData(newImageData, 0, 0);
 });
 
-  // Guzik pobierz
-  document.getElementById('downloadBtn').addEventListener('click', function() {
+// Guzik pobierz
+document.getElementById('downloadBtn').addEventListener('click', function() {
   if (!processedCanvas.width) {
     alert('Najpierw przetwórz obraz!');
     return;
