@@ -1,10 +1,10 @@
 /* Nowy, ładniejszy styl */
 :root{
-  --bg-1: #6b6868;
-  --bg-2: #6b6868;
-  --card: #97c9f8;
-  --accent: #fbff00;
-  --muted: #ff0000;
+  --bg-1: #fffb00;
+  --bg-2: #00ff80;
+  --card: #fbff00;
+  --accent: #ff0000;
+  --muted: #00ff0d;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
@@ -61,8 +61,8 @@ p.lead{color:var(--muted); margin:0 0 12px 0}
 .file-label{display:inline-flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,0.04);cursor:pointer;font-weight:600}
 .file-label input[type="file"]{display:none}
 .controls-group{min-width:220px}
-.controls-group label{display:block;font-size:13px;color:#6b7280;margin-bottom:6px}
-.controls-row{display:flex;align-items:center;gap:8px}
+.controls-group label{display:block;font-size:13px;color:#0055ff;margin-bottom:6px}
+.controls-row{display:flex;align-items:center;gap:8px;color: #ff0000;}
 .controls-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
 .buttons{display:flex;gap:8px}
 
@@ -111,9 +111,6 @@ canvas{border-radius:8px;display:block;width:100%;height:auto;margin:0 auto}
 .canvas-wrap{margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
 .canvas-wrap > div{background:linear-gradient(180deg,#fff,#fbfdff);padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,0.04);box-shadow:0 12px 30px rgba(20,23,66,0.04)}
 
-canvas#Konowo{max-width:640px}
-canvas#Kanawa{max-width:320px}
-
 #sampleColorBox.sample-box{min-width:120px;padding:8px 10px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.06);color:#111;font-weight:600;text-align:center}
 .sample-box{min-width:140px;padding:8px 12px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,0.06);font-weight:700;text-align:center}
 
@@ -126,4 +123,22 @@ canvas#Kanawa{max-width:320px}
   #controls.controls-card{flex-direction:column;align-items:stretch}
   .canvas-wrap{grid-template-columns:1fr}
   .controls-right{align-items:stretch}
+}
+
+canvas {
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(20,23,66,0.08);
+  background: white;
+  max-width: 100%;
+  max-height: 500px; 
+  width: auto;
+  height: auto;
+  border: 1px solid rgba(0,0,0,0.06);
+  display: block;
+  margin: 0 auto;
+}
+
+#Kanawa, #Konowo {
+  max-width: 500px;
+  max-height: 500px;
 }
