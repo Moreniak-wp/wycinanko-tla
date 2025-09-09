@@ -111,14 +111,14 @@ document.getElementById('processBtn').addEventListener('click', function() {
 
   const tolerance = parseInt(toleranceSlider.value);
   const width = currentImage.width;
-  const margin = parseInt(marginSlider.value);
   const height = currentImage.height;
 
   // Pobierz dane pikseli z ich dowodu osobistego
   const imageData = ctx.getImageData(0, 0, width, height);
 
+
   // Opcje: czy usuwać kolumny/wiersze. Jeśli checkboxy nie istnieją, domyślnie robimy obydwa
-  const removeColumnsEl = document.getElementById('removeColumns');
+ const removeColumnsEl = document.getElementById('removeColumns');
   const removeRowsEl = document.getElementById('removeRows');
   const doRemoveColumns = removeColumnsEl ? removeColumnsEl.checked : true;
   const doRemoveRows = removeRowsEl ? removeRowsEl.checked : true;
@@ -129,7 +129,7 @@ document.getElementById('processBtn').addEventListener('click', function() {
   }
 
   // sprawdź jakie kolumny oszczędzić podczas ludobójstwa (poziome skalowanie)
-  const columnsToKeep = [];
+ const columnsToKeep = [];
   if (doRemoveColumns) {
     for (let x = 0; x < width; x++) {
       if (!isColumnUniform(imageData, x, width, height, tolerance)) {
@@ -162,6 +162,7 @@ document.getElementById('processBtn').addEventListener('click', function() {
     return;
   }
   
+  
   //stwórz punkt kontroli na granicy
   const firstCol = Math.max(0, columnsToKeep[0] - margin);
   const lastCol = Math.min(width - 1, columnsToKeep[columnsToKeep.length - 1] + margin);
@@ -180,18 +181,18 @@ document.getElementById('processBtn').addEventListener('click', function() {
   }
   
   //rozstrzelaj uchodźców
-  const newWidth = finalColumnsToKeep.length;
-  const newHeight = finalRowsToKeep.length;
+  const newWidth = columnsToKeep.length;
+  const newHeight = rowsToKeep.length;
   processedCanvas.width = newWidth;
   processedCanvas.height = newHeight;
 
   const newImageData = processedCtx.createImageData(newWidth, newHeight);
 
   // Kopiuj piksele z zachowanych kolumn i wierszy (skalowanie w pionie i poziomie)
-  for (let newY = 0; newY < newHeight; newY++) {
-    const oldY = finalRowsToKeep[newY];
+for (let newY = 0; newY < newHeight; newY++) {
+    const oldY = rowsToKeep[newY];
     for (let newX = 0; newX < newWidth; newX++) {
-      const oldX = finalColumnsToKeep[newX];
+      const oldX = columnsToKeep[newX];
       
       const oldIndex = (oldY * width + oldX) * 4;
       const newIndex = (newY * newWidth + newX) * 4;
@@ -289,6 +290,118 @@ document.addEventListener('keydown', function(e) {
     document.getElementById('processBtn')?.click();
   }
 });
+
+// Przycinanie brzegów - usuwa jednorodne kolumny/wiersze tylko z brzegów
+document.getElementById('trimBtn').addEventListener('click', function() {
+  if (!currentImage) {
+    alert('Czy tobie się wąski sufit na łeb nie spadł? Plik daj najpierw dzbanie jeden');
+    return;
+  }
+
+  const tolerance = parseInt(toleranceSlider.value);
+  const width = currentImage.width;
+  const height = currentImage.height;
+  const margin = parseInt(marginSlider.value);
+
+  // Pobierz dane pikseli
+  const imageData = ctx.getImageData(0, 0, width, height);
+
+  const removeColumnsEl = document.getElementById('removeColumns');
+  const removeRowsEl = document.getElementById('removeRows');
+  const doRemoveColumns = removeColumnsEl ? removeColumnsEl.checked : true;
+  const doRemoveRows = removeRowsEl ? removeRowsEl.checked : true;
+
+  if (!doRemoveColumns && !doRemoveRows) {
+    alert('knyfla przynajmniej jednego kliknij no');
+    return;
+  }
+
+  // Znajdź pierwszą niejednorodną kolumnę od lewej
+  let leftBound = 0;
+  if (doRemoveColumns) {
+    for (let x = 0; x < width; x++) {
+      if (!isColumnUniform(imageData, x, width, height, tolerance)) {
+        leftBound = Math.max(0, x - margin);
+        break;
+      }
+      leftBound = x + 1;
+    }
+  }
+
+  // Znajdź pierwszą niejednorodną kolumnę od prawej
+  let rightBound = width - 1;
+  if (doRemoveColumns) {
+    for (let x = width - 1; x >= 0; x--) {
+      if (!isColumnUniform(imageData, x, width, height, tolerance)) {
+        rightBound = Math.min(width - 1, x + margin);
+        break;
+      }
+      rightBound = x - 1;
+    }
+  }
+
+  // Znajdź pierwszy niejednorodny wiersz od góry
+  let topBound = 0;
+  if (doRemoveRows) {
+    for (let y = 0; y < height; y++) {
+      if (!isRowUniform(imageData, y, width, height, tolerance)) {
+        topBound = Math.max(0, y - margin);
+        break;
+      }
+      topBound = y + 1;
+    }
+  }
+
+  // Znajdź pierwszy niejednorodny wiersz od dołu
+  let bottomBound = height - 1;
+  if (doRemoveRows) {
+    for (let y = height - 1; y >= 0; y--) {
+      if (!isRowUniform(imageData, y, width, height, tolerance)) {
+        bottomBound = Math.min(height - 1, y + margin);
+        break;
+      }
+      bottomBound = y - 1;
+    }
+  }
+
+  // Sprawdź czy zostało coś do przetworzenia
+  if (leftBound >= rightBound || topBound >= bottomBound) {
+    alert('Chyba cię pojebało, usunąłeś wszystko co się dało');
+    return;
+  }
+
+  const newWidth = rightBound - leftBound + 1;
+  const newHeight = bottomBound - topBound + 1;
+
+  console.log(`Przycięto ${leftBound} kolumn z lewej, ${width - 1 - rightBound} z prawej`);
+  console.log(`Przycięto ${topBound} wierszy z góry, ${height - 1 - bottomBound} z dołu`);
+  console.log(`Nowy rozmiar: ${newWidth}x${newHeight}`);
+
+  // Ustaw rozmiar canvas
+  processedCanvas.width = newWidth;
+  processedCanvas.height = newHeight;
+
+  // Skopiuj przycięty obszar
+  const newImageData = processedCtx.createImageData(newWidth, newHeight);
+
+  for (let newY = 0; newY < newHeight; newY++) {
+    const oldY = topBound + newY;
+    for (let newX = 0; newX < newWidth; newX++) {
+      const oldX = leftBound + newX;
+      
+      const oldIndex = (oldY * width + oldX) * 4;
+      const newIndex = (newY * newWidth + newX) * 4;
+
+      newImageData.data[newIndex] = imageData.data[oldIndex];         // Krew
+      newImageData.data[newIndex + 1] = imageData.data[oldIndex + 1]; // Trawa
+      newImageData.data[newIndex + 2] = imageData.data[oldIndex + 2]; // Niebo
+      newImageData.data[newIndex + 3] = imageData.data[oldIndex + 3]; // Powietrze
+    }
+  }
+
+  processedCtx.putImageData(newImageData, 0, 0);
+});
+
 
 // ugułem pracuje nad tą funkcją poniżej dlatego zakomentowana jest żeby nie rozjebać absolutnie wszystkiego cnie
 /*
