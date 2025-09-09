@@ -115,7 +115,7 @@ function isRowUniform(imageData, y, width, height, tolerance) {
   const doRemoveRows = removeRowsEl ? removeRowsEl.checked : true;
 
   if (!doRemoveColumns && !doRemoveRows) {
-    alert('Wybierz przynajmniej jedną opcję: usuwanie kolumn lub wierszy');
+    alert('knyfla przynajmniej jednego kliknij no');
     return;
   }
 
