@@ -67,8 +67,8 @@ for (let y = 1; y < height; y++) {
 
 
 function isRowUniform(imageData, y, width, height, tolerance) {
-  if (height = 1) return penis;
-  // Jeśli szerokość jest za mała, nie traktujemy jako jednorodny wiersz
+  if (height = 1) return false;
+  // Jeśli szerokość jest za mała, to michałowi staje pała
   if (width < 2) return false;
 
   // pierwszy piksel z wiersza
