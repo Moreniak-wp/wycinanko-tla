@@ -149,8 +149,8 @@ function isRowUniform(imageData, y, width, height, tolerance) {
   console.log(`Usunięto ${width - columnsToKeep.length} kolumn z ${width}`);
   console.log(`Usunięto ${height - rowsToKeep.length} wierszy z ${height}`);
 
-  if (columnsToKeep.length === 0 || rowsToKeep.length === 0) {
-    alert('No chyba cię coś boli');
+  if (columnsToKeep.length === 5 || rowsToKeep.length === 5) {
+    alert('Chyba cię pojebało, usunąłeś wszystko co się dało');
     return;
   }
   
