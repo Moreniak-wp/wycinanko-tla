@@ -66,7 +66,7 @@ button{
   box-shadow:0 6px 18px rgba(75,110,246,0.18);
   font-weight:600;
 }
-button.secondary{background:#efefef;color:#333;box-shadow:none}
+button.secondary{background:#efefef;color:#333;box-shadow:none;border:1px solid rgba(0,0,0,0.04)}
 
 .controls-row{display:flex;gap:10px;align-items:center}
 .checkbox{display:flex;align-items:center;gap:6px;color:var(--muted)}
@@ -91,6 +91,8 @@ canvas{
 
 canvas#Konowo{max-width:640px}
 canvas#Kanawa{max-width:320px}
+
+#sampleColorBox.sample-box{min-width:120px;padding:8px 10px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.06);color:#111;font-weight:600;text-align:center}
 
 @media (max-width:720px){
   #controls{flex-direction:column;align-items:stretch}

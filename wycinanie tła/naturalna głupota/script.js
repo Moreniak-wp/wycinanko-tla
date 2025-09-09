@@ -219,11 +219,78 @@ document.getElementById('downloadBtn').addEventListener('click', function() {
 });
 
 
-  // co ja robię tu, u u
+// Dodatkowe funkcje użyteczne i event listenery
+// findObjectBounds: wykrywa granice obiektu na tle bazując na aktualnym tolerancji
+function findObjectBounds(image, tolerance) {
+  const tmp = document.createElement('canvas');
+  const tctx = tmp.getContext('2d');
+  tmp.width = image.width;
+  tmp.height = image.height;
+  tctx.drawImage(image, 0, 0);
+  const imageData = tctx.getImageData(0, 0, tmp.width, tmp.height);
+  const data = imageData.data;
 
+  // Przyjmij kolor tła jako górny-lewy piksel
+  const bg = { r: data[0], g: data[1], b: data[2] };
 
-  // ugułem pracuje nad tą funkcją poniżej dlatego zakomentowana jest żeby nie rozjebać absolutnie wszystkiego cnie
-  //więc proszę nie tykać, bo wezmę pasek
+  let minX = tmp.width, minY = tmp.height, maxX = 0, maxY = 0;
+  for (let y = 0; y < tmp.height; y++) {
+    for (let x = 0; x < tmp.width; x++) {
+      const idx = (y * tmp.width + x) * 4;
+      const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
+      if (a === 0) continue; // przezroczyste ignorujemy
+      if (!colorsAreSimilar({ r, g, b }, bg, tolerance)) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (minX > maxX || minY > maxY) {
+    // nic nie znaleziono, zwróć pełny obraz
+    return { x: 0, y: 0, width: tmp.width, height: tmp.height };
+  }
+
+  const margin = Math.max(0, parseInt(marginSlider?.value || 0));
+  const x = Math.max(0, minX - margin);
+  const y = Math.max(0, minY - margin);
+  const w = Math.min(tmp.width - x, maxX - minX + 1 + margin * 2);
+  const h = Math.min(tmp.height - y, maxY - minY + 1 + margin * 2);
+
+  return { x, y, width: w, height: h };
+}
+
+// Sample color: kliknięcie na canvas pokaże próbkę koloru (jeśli element '#sampleColorBox' istnieje użyj go, inaczej loguj)
+canvas.addEventListener('click', function(e) {
+  if (!canvas.width || !canvas.height) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+  const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+  try {
+    const px = ctx.getImageData(x, y, 1, 1).data;
+    const hex = '#' + ([px[0], px[1], px[2]]).map(v => v.toString(16).padStart(2, '0')).join('');
+    const box = document.getElementById('sampleColorBox');
+    if (box) {
+      box.style.background = hex;
+      box.textContent = `${hex} rgba(${px[0]},${px[1]},${px[2]},${(px[3]/255).toFixed(2)})`;
+    } else {
+      console.log('Sampled color:', hex, px);
+    }
+  } catch (err) {
+    // ignore out-of-bounds
+  }
+});
+
+// Skróty klawiszowe: Enter -> przetwórz, Escape -> nic (reset usunięty)
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    document.getElementById('processBtn')?.click();
+  }
+});
+
+// ugułem pracuje nad tą funkcją poniżej dlatego zakomentowana jest żeby nie rozjebać absolutnie wszystkiego cnie
 /*
 function findObjectBoundsJS(image) {
     const canvas = document.createElement('canvas');
