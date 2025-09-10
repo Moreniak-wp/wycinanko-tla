@@ -227,7 +227,7 @@ document.getElementById('doomBtn').addEventListener('click', function() {
   console.warn('Uruchomiono sekwencję samozniszczenia...');
 
   setTimeout(() => {
-    console.error('BOOM!');
+    console.error('A NIECH CIĘ PEPE PANIE DZIOBAKU');
     while (true) {
       
     }
