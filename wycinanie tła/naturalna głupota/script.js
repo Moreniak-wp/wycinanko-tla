@@ -32,26 +32,17 @@ imageInput.addEventListener('change', function() {
   if (filesToAdd.length < newFiles.length) {
     alert('Niektóre z wybranych plików już znajdują się na liście i zostały pominięte.');
   }
-
   if (filesToAdd.length === 0) {
-    this.value = null; 
-    return;
+    this.value = null; return;
   }
   
   const firstNewImageIndex = loadedImages.length;
-
   const fileReadPromises = filesToAdd.map(file => {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = function(evt) {
+      reader.onload = (evt) => {
         const img = new Image();
-        img.onload = function() {
-          resolve({
-            image: img,
-            name: file.name,
-            processed: null
-          });
-        };
+        img.onload = () => resolve({ image: img, name: file.name, processed: null });
         img.src = evt.target.result;
       };
       reader.readAsDataURL(file);
@@ -60,11 +51,9 @@ imageInput.addEventListener('change', function() {
 
   Promise.all(fileReadPromises).then((newImageObjects) => {
     loadedImages.push(...newImageObjects);
-    
     updateFileList();
-    displayImage(firstNewImageIndex); 
+    displayImage(firstNewImageIndex);
   });
-
   this.value = null;
 });
 
@@ -72,8 +61,6 @@ imageInput.addEventListener('change', function() {
 function updateFileList() {
   const fileList = document.getElementById('fileList');
   fileList.innerHTML = '';
-  
-  // Pokaż lub ukryj listę w zależności od liczby obrazów
   fileList.style.display = loadedImages.length > 1 ? 'block' : 'none';
   
   loadedImages.forEach((item, index) => {
@@ -107,17 +94,13 @@ function displayImage(index) {
   } else {
     processedCtx.clearRect(0, 0, processedCanvas.width, processedCanvas.height);
   }
-  
   updateFileList();
 }
 
-// Usuń obraz z listy
 function removeImage(event, index) {
   event.stopPropagation();
   loadedImages.splice(index, 1);
-  if (currentImageIndex >= loadedImages.length) {
-    currentImageIndex = Math.max(0, loadedImages.length - 1);
-  }
+  currentImageIndex = Math.max(0, Math.min(index, loadedImages.length - 1));
   
   if (loadedImages.length === 0) {
     document.getElementById('fileList').style.display = 'none';
@@ -128,70 +111,28 @@ function removeImage(event, index) {
   }
 }
 
-//Kolor inspektor
-function colorsAreSimilar(color1, color2, tolerance) {
-  const rDiff = Math.abs(color1.r - color2.r);
-  const gDiff = Math.abs(color1.g - color2.g);
-  const bDiff = Math.abs(color1.b - color2.b);
-  return rDiff <= tolerance && gDiff <= tolerance && bDiff <= tolerance;
-}
+function colorsAreSimilar(c1, c2, t) { return Math.abs(c1.r-c2.r)<=t && Math.abs(c1.g-c2.g)<=t && Math.abs(c1.b-c2.b)<=t; }
+function isColumnUniform(d,x,w,h,t){if(h<2)return!1;const f={r:d.data[4*(0*w+x)],g:d.data[4*(0*w+x)+1],b:d.data[4*(0*w+x)+2]};for(let y=1;y<h;y++){const c={r:d.data[4*(y*w+x)],g:d.data[4*(y*w+x)+1],b:d.data[4*(y*w+x)+2]};if(!colorsAreSimilar(f,c,t))return!1}return!0}
+function isRowUniform(d,y,w,h,t){if(h<=1||w<=1)return!1;const f={r:d.data[4*(y*w+0)],g:d.data[4*(y*w+0)+1],b:d.data[4*(y*w+0)+2]};for(let x=1;x<w;x++){const c={r:d.data[4*(y*w+x)],g:d.data[4*(y*w+x)+1],b:d.data[4*(y*w+x)+2]};if(!colorsAreSimilar(f,c,t))return!1}return!0}
 
-function isColumnUniform(imageData, x, width, height, tolerance) {
-  if (height < 2) return false;
-  
-  const firstPixelIndex = (0 * width + x) * 4;
-  const firstColor = { r: imageData.data[firstPixelIndex], g: imageData.data[firstPixelIndex + 1], b: imageData.data[firstPixelIndex + 2] };
-
-  for (let y = 1; y < height; y++) {
-    const pixelIndex = (y * width + x) * 4;
-    const currentColor = { r: imageData.data[pixelIndex], g: imageData.data[pixelIndex + 1], b: imageData.data[pixelIndex + 2] };
-    if (!colorsAreSimilar(firstColor, currentColor, tolerance)) return false;
-  }
-  return true;
-}
-
-function isRowUniform(imageData, y, width, height, tolerance) {
-  if (height <= 1 || width <= 1) return false;
-
-  const firstPixelIndex = (y * width + 0) * 4;
-  const firstColor = { r: imageData.data[firstPixelIndex], g: imageData.data[firstPixelIndex + 1], b: imageData.data[firstPixelIndex + 2] };
-
-  for (let x = 1; x < width; x++) {
-    const pixelIndex = (y * width + x) * 4;
-    const currentColor = { r: imageData.data[pixelIndex], g: imageData.data[pixelIndex + 1], b: imageData.data[pixelIndex + 2] };
-    if (!colorsAreSimilar(firstColor, currentColor, tolerance)) return false;
-  }
-  return true;
-}
-
-// Funkcja przetwarzania obrazu 
 function processImage(imageData, width, height, tolerance, doRemoveColumns, doRemoveRows) {
   const columnsToKeep = [];
   if (doRemoveColumns) {
-    for (let x = 0; x < width; x++) {
-      if (!isColumnUniform(imageData, x, width, height, tolerance)) columnsToKeep.push(x);
-    }
-  } else {
-    for (let x = 0; x < width; x++) columnsToKeep.push(x);
-  }
+    for (let x = 0; x < width; x++) { if (!isColumnUniform(imageData, x, width, height, tolerance)) columnsToKeep.push(x); }
+  } else { for (let x = 0; x < width; x++) columnsToKeep.push(x); }
 
   const rowsToKeep = [];
   if (doRemoveRows) {
-    for (let y = 0; y < height; y++) {
-      if (!isRowUniform(imageData, y, width, height, tolerance)) rowsToKeep.push(y);
-    }
-  } else {
-    for (let y = 0; y < height; y++) rowsToKeep.push(y);
-  }
+    for (let y = 0; y < height; y++) { if (!isRowUniform(imageData, y, width, height, tolerance)) rowsToKeep.push(y); }
+  } else { for (let y = 0; y < height; y++) rowsToKeep.push(y); }
 
   if (columnsToKeep.length === 0 || rowsToKeep.length === 0) return null;
 
   const newWidth = columnsToKeep.length;
   const newHeight = rowsToKeep.length;
   
-  const tempCanvas = document.createElement('canvas');
-  const tempCtx = tempCanvas.getContext('2d');
-  const newImageData = tempCtx.createImageData(newWidth, newHeight);
+  // Tworzy nowy, niezależny obiekt ImageData
+  const newImageData = new ImageData(newWidth, newHeight);
 
   for (let newY = 0; newY < newHeight; newY++) {
     const oldY = rowsToKeep[newY];
@@ -207,56 +148,25 @@ function processImage(imageData, width, height, tolerance, doRemoveColumns, doRe
   return newImageData;
 }
 
-// Przetwarzanie pojedynczego obrazu 
-document.getElementById('processBtn').addEventListener('click', function() {
+const processSingle = (processingFunction) => {
   if (loadedImages.length === 0) {
     alert('Czy tobie się wąski sufit na łeb nie spadł? Plik daj najpierw dzbanie jeden');
     return;
   }
-
-  const tolerance = parseInt(toleranceSlider.value);
   const currentItem = loadedImages[currentImageIndex];
-  const { image } = currentItem;
+  const processedImageData = processingFunction(currentItem.image);
 
-  const tempCanvas = document.createElement('canvas');
-  const tempCtx = tempCanvas.getContext('2d');
-  tempCanvas.width = image.width;
-  tempCanvas.height = image.height;
-  tempCtx.drawImage(image, 0, 0);
-  const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
-
-  const doRemoveColumns = document.getElementById('removeColumns').checked;
-  const doRemoveRows = document.getElementById('removeRows').checked;
-
-  if (!doRemoveColumns && !doRemoveRows) {
-    alert('knyfla przynajmniej jednego kliknij no');
-    return;
-  }
-
-  const processedImageData = processImage(imageData, image.width, image.height, tolerance, doRemoveColumns, doRemoveRows);
-  
-  if (!processedImageData) {
+  if (processedImageData) {
+    currentItem.processed = processedImageData;
+    displayImage(currentImageIndex);
+  } else {
     alert('Chyba cię pojebało, usunąłeś wszystko co się dało');
-    return;
   }
+};
 
-  currentItem.processed = processedImageData;
-  displayImage(currentImageIndex);
-});
-
-// Przetwarzanie wsadowe wszystkich obrazów
-document.getElementById('processBatchBtn').addEventListener('click', async function() {
+const processBatch = async (processingFunction) => {
   if (loadedImages.length === 0) {
     alert('Czy tobie się wąski sufit na łeb nie spadł? Plik daj najpierw dzbanie jeden');
-    return;
-  }
-
-  const tolerance = parseInt(toleranceSlider.value);
-  const doRemoveColumns = document.getElementById('removeColumns').checked;
-  const doRemoveRows = document.getElementById('removeRows').checked;
-
-  if (!doRemoveColumns && !doRemoveRows) {
-    alert('knyfla przynajmniej jednego kliknij no');
     return;
   }
 
@@ -268,16 +178,7 @@ document.getElementById('processBatchBtn').addEventListener('click', async funct
   const total = loadedImages.length;
   for (let i = 0; i < total; i++) {
     const item = loadedImages[i];
-    const { image } = item;
-    
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCanvas.width = image.width;
-    tempCanvas.height = image.height;
-    tempCtx.drawImage(image, 0, 0);
-    const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
-
-    const processedImageData = processImage(imageData, image.width, image.height, tolerance, doRemoveColumns, doRemoveRows);
+    const processedImageData = processingFunction(item.image);
     if (processedImageData) item.processed = processedImageData;
 
     const progress = ((i + 1) / total) * 100;
@@ -289,21 +190,81 @@ document.getElementById('processBatchBtn').addEventListener('click', async funct
   setTimeout(() => { progressContainer.style.display = 'none'; }, 1500);
   displayImage(currentImageIndex);
   alert(`Przetworzono ${total} obrazów!`);
-});
+};
 
-// Pobierz pojedynczy obraz
+// Logika dla przycisku "Przetwórz" / "Przetwórz wszystkie"
+document.getElementById('processBtn').addEventListener('click', () => processSingle(getImageForScaling));
+document.getElementById('processBatchBtn').addEventListener('click', () => processBatch(getImageForScaling));
+
+// Logika dla przycisku "Przytnij brzegi"
+document.getElementById('trimBtn').addEventListener('click', () => processSingle(getImageForTrimming));
+
+// Funkcja pomocnicza, która przygotowuje dane dla szkalowania 
+function getImageForScaling(image) {
+  const tolerance = parseInt(toleranceSlider.value);
+  const doRemoveColumns = document.getElementById('removeColumns').checked;
+  const doRemoveRows = document.getElementById('removeRows').checked;
+  
+  if (!doRemoveColumns && !doRemoveRows) {
+    alert('knyfla przynajmniej jednego kliknij no');
+    return null;
+  }
+  
+  const tempCtx = document.createElement('canvas').getContext('2d');
+  tempCtx.canvas.width = image.width;
+  tempCtx.canvas.height = image.height;
+  tempCtx.drawImage(image, 0, 0);
+  const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+  
+  return processImage(imageData, image.width, image.height, tolerance, doRemoveColumns, doRemoveRows);
+}
+
+function getImageForTrimming(image) {
+  const tolerance = parseInt(toleranceSlider.value);
+  const margin = parseInt(marginSlider.value);
+  const doRemoveColumns = document.getElementById('removeColumns').checked;
+  const doRemoveRows = document.getElementById('removeRows').checked;
+
+  if (!doRemoveColumns && !doRemoveRows) {
+    alert('knyfla przynajmniej jednego kliknij no');
+    return null;
+  }
+
+  const tempCtx = document.createElement('canvas').getContext('2d');
+  tempCtx.canvas.width = image.width;
+  tempCtx.canvas.height = image.height;
+  tempCtx.drawImage(image, 0, 0);
+  const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+
+  let leftBound = 0, rightBound = image.width - 1, topBound = 0, bottomBound = image.height - 1;
+
+  if (doRemoveColumns) {
+    for (let x = 0; x < image.width; x++) { if (!isColumnUniform(imageData, x, image.width, image.height, tolerance)) { leftBound = Math.max(0, x - margin); break; } leftBound = x + 1; }
+    for (let x = image.width - 1; x >= 0; x--) { if (!isColumnUniform(imageData, x, image.width, image.height, tolerance)) { rightBound = Math.min(image.width - 1, x + margin); break; } rightBound = x - 1; }
+  }
+  if (doRemoveRows) {
+    for (let y = 0; y < image.height; y++) { if (!isRowUniform(imageData, y, image.width, image.height, tolerance)) { topBound = Math.max(0, y - margin); break; } topBound = y + 1; }
+    for (let y = image.height - 1; y >= 0; y--) { if (!isRowUniform(imageData, y, image.width, image.height, tolerance)) { bottomBound = Math.min(image.height - 1, y + margin); break; } bottomBound = y - 1; }
+  }
+  
+  if (leftBound >= rightBound || topBound >= bottomBound) return null;
+
+  const newWidth = rightBound - leftBound + 1;
+  const newHeight = bottomBound - topBound + 1;
+
+  return tempCtx.getImageData(leftBound, topBound, newWidth, newHeight);
+}
+
+
 document.getElementById('downloadBtn').addEventListener('click', function() {
   const currentItem = loadedImages[currentImageIndex];
   if (!currentItem || !currentItem.processed) {
-    alert('Najpierw przetwórz obraz!');
-    return;
+    alert('Najpierw przetwórz obraz!'); return;
   }
-  
   const tempCanvas = document.createElement('canvas');
-  const tempCtx = tempCanvas.getContext('2d');
   tempCanvas.width = currentItem.processed.width;
   tempCanvas.height = currentItem.processed.height;
-  tempCtx.putImageData(currentItem.processed, 0, 0);
+  tempCanvas.getContext('2d').putImageData(currentItem.processed, 0, 0);
   
   const link = document.createElement('a');
   link.download = currentItem.name.replace(/\.[^/.]+$/, '') + '_processed.png';
@@ -311,31 +272,24 @@ document.getElementById('downloadBtn').addEventListener('click', function() {
   link.click();
 });
 
-// Pobierz wszystkie przetworzone obrazy
 document.getElementById('downloadAllBtn').addEventListener('click', async function() {
   const processedItems = loadedImages.filter(item => item.processed);
   if (processedItems.length === 0) {
-    alert('Najpierw przetwórz przynajmniej jeden obraz!');
-    return;
+    alert('Najpierw przetwórz przynajmniej jeden obraz!'); return;
   }
-
   for (const item of processedItems) {
     const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
     tempCanvas.width = item.processed.width;
     tempCanvas.height = item.processed.height;
-    tempCtx.putImageData(item.processed, 0, 0);
-    
+    tempCanvas.getContext('2d').putImageData(item.processed, 0, 0);
     const link = document.createElement('a');
     link.download = item.name.replace(/\.[^/.]+$/, '') + '_processed.png';
     link.href = tempCanvas.toDataURL('image/png');
     link.click();
-    
     await new Promise(resolve => setTimeout(resolve, 200));
   }
 });
 
-// Sample color
 canvas.addEventListener('click', function(e) {
   if (!canvas.width || !canvas.height) return;
   const rect = canvas.getBoundingClientRect();
@@ -349,79 +303,19 @@ canvas.addEventListener('click', function(e) {
       box.style.background = hex;
       box.textContent = `${hex} rgba(${px[0]},${px[1]},${px[2]},${(px[3]/255).toFixed(2)})`;
     }
-  } catch (err) { /* wypadł poza świat */ }
+  } catch (err) { /* ignore */ }
 });
 
-// Skróty klawiszowe
 document.addEventListener('keydown', function(e) {
-  if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'BUTTON') return;
-  
-  if (e.key === 'Enter') {
-    document.getElementById('processBtn')?.click();
-  } else if (e.key === 'ArrowLeft' && loadedImages.length > 1) {
-    const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : loadedImages.length - 1;
-    displayImage(newIndex);
-  } else if (e.key === 'ArrowRight' && loadedImages.length > 1) {
-    const newIndex = currentImageIndex < loadedImages.length - 1 ? currentImageIndex + 1 : 0;
-    displayImage(newIndex);
-  }
+  if (document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='BUTTON')return;
+  if (e.key==='Enter') document.getElementById('processBtn')?.click();
+  else if (e.key==='ArrowLeft'&&loadedImages.length>1) displayImage(currentImageIndex>0?currentImageIndex-1:loadedImages.length-1);
+  else if (e.key==='ArrowRight'&&loadedImages.length>1) displayImage(currentImageIndex<loadedImages.length-1?currentImageIndex+1:0);
 });
 
-// Przycinanie brzegów 
-document.getElementById('trimBtn').addEventListener('click', function() {
-    if (loadedImages.length === 0) {
-    alert('Czy tobie się wąski sufit na łeb nie spadł? Plik daj najpierw dzbanie jeden');
-    return;
-  }
-
-  const tolerance = parseInt(toleranceSlider.value);
-  const margin = parseInt(marginSlider.value);
-  const currentItem = loadedImages[currentImageIndex];
-  const { image } = currentItem;
-
-  const tempCanvas = document.createElement('canvas');
-  const tempCtx = tempCanvas.getContext('2d');
-  tempCanvas.width = image.width;
-  tempCanvas.height = image.height;
-  tempCtx.drawImage(image, 0, 0);
-  const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
-
-  const doRemoveColumns = document.getElementById('removeColumns').checked;
-  const doRemoveRows = document.getElementById('removeRows').checked;
-
-  if (!doRemoveColumns && !doRemoveRows) {
-    alert('knyfla przynajmniej jednego kliknij no');
-    return;
-  }
-
-  let leftBound = 0, rightBound = image.width - 1, topBound = 0, bottomBound = image.height - 1;
-
-  if (doRemoveColumns) {
-    for (let x = 0; x < image.width; x++) { if (!isColumnUniform(imageData, x, image.width, image.height, tolerance)) { leftBound = Math.max(0, x - margin); break; } leftBound = x + 1; }
-    for (let x = image.width - 1; x >= 0; x--) { if (!isColumnUniform(imageData, x, image.width, image.height, tolerance)) { rightBound = Math.min(image.width - 1, x + margin); break; } rightBound = x - 1; }
-  }
-  if (doRemoveRows) {
-    for (let y = 0; y < image.height; y++) { if (!isRowUniform(imageData, y, image.width, image.height, tolerance)) { topBound = Math.max(0, y - margin); break; } topBound = y + 1; }
-    for (let y = image.height - 1; y >= 0; y--) { if (!isRowUniform(imageData, y, image.width, image.height, tolerance)) { bottomBound = Math.min(image.height - 1, y + margin); break; } bottomBound = y - 1; }
-  }
-  
-  if (leftBound >= rightBound || topBound >= bottomBound) {
-    alert('Chyba cię pojebało, usunąłeś wszystko co się dało'); return;
-  }
-
-  const newWidth = rightBound - leftBound + 1;
-  const newHeight = bottomBound - topBound + 1;
-  const newImageData = tempCtx.getImageData(leftBound, topBound, newWidth, newHeight);
-
-  currentItem.processed = newImageData;
-  displayImage(currentImageIndex);
-});
-
-// Presety tolerancji
-document.querySelectorAll('.tolerance-presets button').forEach(button => {
-  button.addEventListener('click', function() {
-    const presetTolerance = this.dataset.tolerance;
-    toleranceSlider.value = presetTolerance;
-    toleranceValue.textContent = presetTolerance;
+document.querySelectorAll('.tolerance-presets button').forEach(b => {
+  b.addEventListener('click', function() {
+    toleranceSlider.value = this.dataset.tolerance;
+    toleranceValue.textContent = this.dataset.tolerance;
   });
 });
