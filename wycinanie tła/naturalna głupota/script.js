@@ -319,3 +319,14 @@ document.querySelectorAll('.tolerance-presets button').forEach(b => {
     toleranceValue.textContent = this.dataset.tolerance;
   });
 });
+
+document.getElementById('meltdownBtn').addEventListener('click', function() {
+  if (confirm('Czy na pewno chcesz to zrobić?')) {
+    document.body.classList.add('meltdown');
+
+    setTimeout(() => {
+      document.body.innerHTML = '<h1 style="color: #eee; text-align: center; margin-top: 40vh; font-family: monospace, sans-serif; font-size: 4rem;">A NIECH CIĘ PEPE PANIE DZIOBAKU</h1>';
+      document.body.style.background = '#121212';
+    }, 1600); 
+  }
+});

@@ -205,3 +205,30 @@ canvas{
   .controls-right{margin-left:0;justify-content:space-between}
   .canvas-wrap{flex-direction:column}
 }
+
+/* Kaboom? */
+button.danger {
+  background-color: #d9534f;
+  border-color: #d43f3a;
+  box-shadow: 0 6px 18px rgba(217, 83, 79, 0.3);
+}
+button.danger:hover {
+  background-color: #c9302c;
+  border-color: #ac2925;
+}
+
+body.meltdown > * {
+  animation: fly-away 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+}
+
+@keyframes fly-away {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-150vh) rotate(720deg) scale(0);
+    opacity: 0;
+  }
+}
+/* Yes Rico, Kaboom */
