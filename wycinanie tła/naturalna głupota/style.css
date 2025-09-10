@@ -218,16 +218,17 @@ button.danger:hover {
 }
 
 body.meltdown > * {
-  animation: fly-away 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+transform-origin: center center;
+  animation: swirl-out 1.8s cubic-bezier(0.55, 0.09, 0.68, 0.53) forwards;
 }
 
-@keyframes fly-away {
-  0% {
-    transform: translateY(0) rotate(0deg) scale(1);
+@keyframes swirl-out {
+  from {
+    transform: scale(1) rotate(0deg);
     opacity: 1;
   }
-  100% {
-    transform: translateY(-150vh) rotate(720deg) scale(0);
+  to {
+    transform: scale(0) rotate(1080deg);
     opacity: 0;
   }
 }
