@@ -280,7 +280,7 @@ canvas.addEventListener('click', function(e) {
       console.log('Sampled color:', hex, px);
     }
   } catch (err) {
-    // ignore out-of-bounds
+    // wylazł poza mapę
   }
 });
 
@@ -400,4 +400,12 @@ document.getElementById('trimBtn').addEventListener('click', function() {
   }
 
   processedCtx.putImageData(newImageData, 0, 0);
+});
+
+document.querySelectorAll('.tolerance-presets button').forEach(button => {
+  button.addEventListener('click', function() {
+    const presetTolerance = this.dataset.tolerance;
+    toleranceSlider.value = presetTolerance;
+    toleranceValue.textContent = presetTolerance;
+  });
 });
