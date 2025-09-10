@@ -10,7 +10,7 @@
   <div class="container">
     <header>
       <h1>Naturalna głupota inator</h1>
-      <p class="lead">Nie mam pojęcia co ja robie ale jakoś to idzie</p>
+      <p class="lead">Usuń jednorodne kolumny i wiersze tła, skalując obraz w poziomie i pionie.</p>
     </header>
 
     <div id="controls" class="controls-card">
@@ -50,14 +50,14 @@
       </div>
 
       <div class="controls-right">
- <div class="buttons">
-  <button id="processBtn" class="primary">Przetwórz</button>
-  <button id="processBatchBtn" class="primary">Przetwórz wszystkie</button>
-  <button id="trimBtn" class="secondary">Przytnij brzegi</button>
-  <button id="downloadBtn" class="secondary">Pobierz</button>
-  <button id="downloadAllBtn" class="secondary">Pobierz wszystkie</button>
-  <button id="meltdownBtn" class="danger">Autodestrukcja</button>
-</div>
+        <div class="buttons">
+          <button id="processBtn" class="primary">Przetwórz</button>
+          <button id="processBatchBtn" class="primary">Przetwórz wszystkie</button>
+          <button id="trimBtn" class="secondary">Przytnij brzegi</button>
+          <button id="downloadBtn" class="secondary">Pobierz</button>
+          <button id="downloadAllBtn" class="secondary">Pobierz wszystkie</button>
+          <button id="doomBtn" class="doom">?</button>
+        </div>
         <div id="sampleColorBox" class="sample-box" title="Kliknij na obraz, aby spróbkować koloru">Kliknij obraz</div>
         <div id="progressContainer" class="progress-container" style="display: none;">
           <div class="progress-bar">
@@ -79,6 +79,10 @@
         <canvas id="Konowo" width="500" height="500"></canvas>
       </div>
     </div>
+  </div>
+
+  <div id="doomOverlay" style="display: none;">
+    <img id="doomGif" src="">
   </div>
 
   <script src="script.js"></script>
