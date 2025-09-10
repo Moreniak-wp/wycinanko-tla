@@ -10,7 +10,6 @@ const processedCtx = processedCanvas.getContext('2d');
 
 // Nowe zmienne dla obsługi wielu plików
 let loadedImages = [];
-let processedImages = [];
 let currentImageIndex = 0;
 
 // mądre rzeczy
@@ -29,7 +28,6 @@ imageInput.addEventListener('change', function() {
   if (files.length === 0) return;
   
   loadedImages = [];
-  processedImages = [];
   currentImageIndex = 0;
   
   const fileList = document.getElementById('fileList');
@@ -70,7 +68,7 @@ function updateFileList() {
     fileItem.className = `file-item ${index === currentImageIndex ? 'active' : ''}`;
     fileItem.innerHTML = `
       <span onclick="displayImage(${index})" style="cursor: pointer; flex: 1;">${item.name}</span>
-      <button onclick="removeImage(${index})">×</button>
+      <button onclick="removeImage(event, ${index})">×</button>
     `;
     fileList.appendChild(fileItem);
   });
@@ -103,7 +101,8 @@ function displayImage(index) {
 }
 
 // Usuń obraz z listy
-function removeImage(index) {
+function removeImage(event, index) {
+  event.stopPropagation(); 
   loadedImages.splice(index, 1);
   if (currentImageIndex >= loadedImages.length) {
     currentImageIndex = Math.max(0, loadedImages.length - 1);
@@ -208,7 +207,6 @@ function processImage(imageData, width, height, tolerance, margin, doRemoveColum
   const newWidth = columnsToKeep.length;
   const newHeight = rowsToKeep.length;
   
-  // Tworzenie tymczasowego canvas do przetwarzania
   const tempCanvas = document.createElement('canvas');
   const tempCtx = tempCanvas.getContext('2d');
   tempCanvas.width = newWidth;
@@ -247,7 +245,6 @@ document.getElementById('processBtn').addEventListener('click', function() {
   const width = currentItem.image.width;
   const height = currentItem.image.height;
 
-  // Pobierz dane pikseli
   const tempCanvas = document.createElement('canvas');
   const tempCtx = tempCanvas.getContext('2d');
   tempCanvas.width = width;
@@ -255,10 +252,8 @@ document.getElementById('processBtn').addEventListener('click', function() {
   tempCtx.drawImage(currentItem.image, 0, 0);
   const imageData = tempCtx.getImageData(0, 0, width, height);
 
-  const removeColumnsEl = document.getElementById('removeColumns');
-  const removeRowsEl = document.getElementById('removeRows');
-  const doRemoveColumns = removeColumnsEl ? removeColumnsEl.checked : true;
-  const doRemoveRows = removeRowsEl ? removeRowsEl.checked : true;
+  const doRemoveColumns = document.getElementById('removeColumns').checked;
+  const doRemoveRows = document.getElementById('removeRows').checked;
 
   if (!doRemoveColumns && !doRemoveRows) {
     alert('knyfla przynajmniej jednego kliknij no');
@@ -272,10 +267,8 @@ document.getElementById('processBtn').addEventListener('click', function() {
     return;
   }
 
-  // Zapisz przetworzony obraz
   currentItem.processed = processedImageData;
   
-  // Wyświetl wynik
   processedCanvas.width = processedImageData.width;
   processedCanvas.height = processedImageData.height;
   processedCtx.putImageData(processedImageData, 0, 0);
@@ -290,23 +283,20 @@ document.getElementById('processBatchBtn').addEventListener('click', async funct
 
   const tolerance = parseInt(toleranceSlider.value);
   const margin = parseInt(marginSlider.value);
-  const removeColumnsEl = document.getElementById('removeColumns');
-  const removeRowsEl = document.getElementById('removeRows');
-  const doRemoveColumns = removeColumnsEl ? removeColumnsEl.checked : true;
-  const doRemoveRows = removeRowsEl ? removeRowsEl.checked : true;
+  const doRemoveColumns = document.getElementById('removeColumns').checked;
+  const doRemoveRows = document.getElementById('removeRows').checked;
 
   if (!doRemoveColumns && !doRemoveRows) {
     alert('knyfla przynajmniej jednego kliknij no');
     return;
   }
 
-  // Pokaż progress bar
   const progressContainer = document.getElementById('progressContainer');
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
   progressContainer.style.display = 'block';
   
-  let processed = 0;
+  let processedCount = 0;
   const total = loadedImages.length;
 
   for (let i = 0; i < loadedImages.length; i++) {
@@ -314,7 +304,6 @@ document.getElementById('processBatchBtn').addEventListener('click', async funct
     const width = item.image.width;
     const height = item.image.height;
 
-    // Pobierz dane pikseli
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
     tempCanvas.width = width;
@@ -328,24 +317,21 @@ document.getElementById('processBatchBtn').addEventListener('click', async funct
       item.processed = processedImageData;
     }
 
-    processed++;
-    const progress = (processed / total) * 100;
+    processedCount++;
+    const progress = (processedCount / total) * 100;
     progressBar.style.width = `${progress}%`;
-    progressText.textContent = `${processed}/${total}`;
+    progressText.textContent = `${processedCount}/${total}`;
 
-    // Małe opóźnienie żeby UI mogło się odświeżyć
     await new Promise(resolve => setTimeout(resolve, 10));
   }
 
-  // Ukryj progress bar (3d) po chwili
   setTimeout(() => {
     progressContainer.style.display = 'none';
-  }, 1000);
+  }, 1500);
 
-  // Odśwież wyświetlany obraz
   displayImage(currentImageIndex);
   
-  alert(`Przetworzono ${processed} obrazów!`);
+  alert(`Przetworzono ${processedCount} obrazów!`);
 });
 
 // Pobierz pojedynczy obraz
@@ -369,7 +355,7 @@ document.getElementById('downloadBtn').addEventListener('click', function() {
   link.click();
 });
 
-// Pobierz wszystkie przetworzone obrazy jako ZIP 
+// Pobierz wszystkie przetworzone obrazy
 document.getElementById('downloadAllBtn').addEventListener('click', async function() {
   const processedItems = loadedImages.filter(item => item.processed);
   
@@ -378,7 +364,6 @@ document.getElementById('downloadAllBtn').addEventListener('click', async functi
     return;
   }
 
-  // Wombo combo
   for (let i = 0; i < processedItems.length; i++) {
     const item = processedItems[i];
     const tempCanvas = document.createElement('canvas');
@@ -393,7 +378,6 @@ document.getElementById('downloadAllBtn').addEventListener('click', async functi
     link.href = tempCanvas.toDataURL('image/png');
     link.click();
     
-    // opóźnienie pociągu może ulec zmianie
     await new Promise(resolve => setTimeout(resolve, 200));
   }
 });
@@ -411,8 +395,6 @@ canvas.addEventListener('click', function(e) {
     if (box) {
       box.style.background = hex;
       box.textContent = `${hex} rgba(${px[0]},${px[1]},${px[2]},${(px[3]/255).toFixed(2)})`;
-    } else {
-      console.log('Sampled color:', hex, px);
     }
   } catch (err) {
     // wypadł poza świat
@@ -445,7 +427,6 @@ document.getElementById('trimBtn').addEventListener('click', function() {
   const width = currentItem.image.width;
   const height = currentItem.image.height;
 
-  // Pobierz dane pikseli
   const tempCanvas = document.createElement('canvas');
   const tempCtx = tempCanvas.getContext('2d');
   tempCanvas.width = width;
@@ -453,17 +434,14 @@ document.getElementById('trimBtn').addEventListener('click', function() {
   tempCtx.drawImage(currentItem.image, 0, 0);
   const imageData = tempCtx.getImageData(0, 0, width, height);
 
-  const removeColumnsEl = document.getElementById('removeColumns');
-  const removeRowsEl = document.getElementById('removeRows');
-  const doRemoveColumns = removeColumnsEl ? removeColumnsEl.checked : true;
-  const doRemoveRows = removeRowsEl ? removeRowsEl.checked : true;
+  const doRemoveColumns = document.getElementById('removeColumns').checked;
+  const doRemoveRows = document.getElementById('removeRows').checked;
 
   if (!doRemoveColumns && !doRemoveRows) {
     alert('knyfla przynajmniej jednego kliknij no');
     return;
   }
 
-  // Logika przycinania brzegów 
   let leftBound = 0;
   if (doRemoveColumns) {
     for (let x = 0; x < width; x++) {
@@ -533,10 +511,8 @@ document.getElementById('trimBtn').addEventListener('click', function() {
     }
   }
 
-  // Zapisz przetworzony obraz
   currentItem.processed = newImageData;
   
-  // Wyświetl wynik
   processedCanvas.width = newImageData.width;
   processedCanvas.height = newImageData.height;
   processedCtx.putImageData(newImageData, 0, 0);
