@@ -16,9 +16,10 @@
     <div id="controls" class="controls-card">
       <div class="controls-left">
         <div class="file-input-wrap">
-          <label class="file-label">Wybierz obraz
-            <input type="file" id="imageInput" accept="image/*">
+          <label class="file-label">Wybierz obrazy
+            <input type="file" id="imageInput" accept="image/*" multiple>
           </label>
+          <div id="fileList" class="file-list"></div>
         </div>
 
         <div class="controls-group">
@@ -27,13 +28,12 @@
             <input type="range" id="tolerance" min="0" max="255" value="69">
             <span id="toleranceValue">69</span>
           </div>
-        </div>
-
-        <div class="tolerance-presets">
+          <div class="tolerance-presets">
             <button class="secondary" data-tolerance="30">Niska</button>
             <button class="secondary" data-tolerance="70">Średnia</button>
             <button class="secondary" data-tolerance="120">Wysoka</button>
           </div>
+        </div>
 
         <div class="controls-group">
           <label for="margin">Margines</label>
@@ -51,11 +51,19 @@
 
       <div class="controls-right">
         <div class="buttons">
-  <button id="processBtn" class="primary">Przetwórz</button>
-  <button id="trimBtn" class="secondary">Przytnij brzegi</button>
-  <button id="downloadBtn" class="secondary">Pobierz</button>
-</div>
+          <button id="processBtn" class="primary">Przetwórz</button>
+          <button id="processBatchBtn" class="primary">Przetwórz wszystkie</button>
+          <button id="trimBtn" class="secondary">Przytnij brzegi</button>
+          <button id="downloadBtn" class="secondary">Pobierz</button>
+          <button id="downloadAllBtn" class="secondary">Pobierz wszystkie</button>
+        </div>
         <div id="sampleColorBox" class="sample-box" title="Kliknij na obraz, aby spróbkować koloru">Kliknij obraz</div>
+        <div id="progressContainer" class="progress-container" style="display: none;">
+          <div class="progress-bar">
+            <div id="progressBar" class="progress-fill"></div>
+          </div>
+          <span id="progressText">0/0</span>
+        </div>
       </div>
     </div>
 
