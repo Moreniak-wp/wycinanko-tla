@@ -189,7 +189,7 @@ const processBatch = async (processingFunction) => {
 
   setTimeout(() => { progressContainer.style.display = 'none'; }, 1500);
   displayImage(currentImageIndex);
-  alert(`Przetworzono ${total} obrazów!`);
+  alert(`Wykastrowano ${total} Uchodźców`);
 };
 
 // Logika dla przycisku "Przetwórz" / "Przetwórz wszystkie"
