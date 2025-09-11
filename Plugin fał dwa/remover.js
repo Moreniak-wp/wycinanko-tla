@@ -20,11 +20,6 @@ function logEvent(message, element = null) {
     });
 }
 
-function hidePrimaryAds() {  }
-function hideFallbackAds() {  }
-function hidePlaceholders() {  }
-function applySafetyNet() { }
-
 function hidePrimaryAds() {
     const primaryAdSelectors = [
         '[id^="google_ads_iframe_"]', '[id^="div-gpt-ad-"]', '.adsbygoogle',
