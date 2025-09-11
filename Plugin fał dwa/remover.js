@@ -1,7 +1,7 @@
-// remover.js - v26.0 - "The Hunter Patch"
-console.log("WP Ad Inspector (v26.0) - HUNTER - Initialized.");
+// remover.js - v26.1 - "The Archivist Patch"
+console.log("WP Ad Inspector (v26.1) - ARCHIVIST - Initialized.");
 
-// --- MODULE: Logging (bez zmian) ---
+// Kłodding
 function logEvent(message, element = null) {
     const timestamp = new Date().toLocaleTimeString();
     let logMessage = `[${timestamp}] ${message}`;
@@ -19,7 +19,7 @@ function logEvent(message, element = null) {
     });
 }
 
-// --- DETECTION ROUTINE 1: Primary Ad Content (bez zmian) ---
+// Detection Route
 function hidePrimaryAds() {
     const primaryAdSelectors = [
         '[id^="google_ads_iframe_"]', '[id^="div-gpt-ad-"]', '.adsbygoogle',
@@ -30,12 +30,12 @@ function hidePrimaryAds() {
     document.querySelectorAll(primaryAdSelectors.join(',')).forEach(element => {
         const target = element.tagName === 'IFRAME' ? element.parentElement : element;
         if (target && target.parentElement && target.style.display !== 'none') {
+            logEvent("PrimaryDetection: Hiding generic ad element.", target);
             target.style.setProperty('display', 'none', 'important');
         }
     });
 }
 
-// --- DETECTION ROUTINE 2: Fallback Ad Content (LOGIKA HUNTER) ---
 function hideFallbackAds() {
     const FALLBACK_CDN_HOST = 'v.wpimg.pl';
     const TRACKING_LINK_LENGTH_THRESHOLD = 150;
@@ -43,9 +43,7 @@ function hideFallbackAds() {
     const MAX_AD_HEIGHT_PX = 450;
     const DO_NOT_HIDE_SELECTORS = ['#wp-site-main', 'main', '#page', '#app', '#root', '.article-body', '.wp-section-aside'];
     
-    // Lista tagów, które ZAZWYCZAJ wskazują na treść.
     const CONTENT_TAGS = ['h2', 'h3', 'h4', 'h5', 'p', 'span'];
-    // Słowa-klucze, które demaskują reklamę, nawet jeśli ma tagi treści.
     const AD_KEYWORDS = ['REKLAMA', 'SPONSOROWANY', 'PROMOCJA','MAT. SPONSOROWANY, MAT. P'];
 
     document.querySelectorAll(`img[src*="${FALLBACK_CDN_HOST}"]`).forEach(img => {
@@ -54,39 +52,42 @@ function hideFallbackAds() {
 
         const isLongRedirect = link.href.startsWith('https://www.wp.pl/') && link.href.length > TRACKING_LINK_LENGTH_THRESHOLD;
         const isDirectAdDomain = AD_DOMAINS.some(domain => link.href.includes(domain));
-        if (!isLongRedirect && !isDirectAdDomain) return;
+        if (!isLongRedirect && !isDirectAdDomain) {
+            logEvent(`FallbackGuard: Link is not a tracking link. Sparing.`, link);
+            return;
+        }
 
         const container = link.parentElement;
         if (!container || container.style.display === 'none') return;
         
-        if (DO_NOT_HIDE_SELECTORS.some(selector => container.matches(selector))) return;
-        if (container.getBoundingClientRect().height > MAX_AD_HEIGHT_PX) return;
+        if (DO_NOT_HIDE_SELECTORS.some(selector => container.matches(selector))) {
+            logEvent(`FallbackGuard: Container matches a DO_NOT_HIDE selector. Sparing.`, container);
+            return;
+        }
+        if (container.getBoundingClientRect().height > MAX_AD_HEIGHT_PX) {
+            logEvent(`FallbackGuard: Container is taller than MAX_AD_HEIGHT_PX. Sparing.`, container);
+            return;
+        }
         
-        // --- NOWA LOGIKA "HUNTER" ---
         const hasContentTags = CONTENT_TAGS.some(selector => container.querySelector(selector));
         
         if (hasContentTags) {
-            // Kontener ma tagi treści. Sprawdźmy, czy nie jest to pułapka.
             const textContent = container.textContent.toLowerCase();
             const hasAdKeywords = AD_KEYWORDS.some(keyword => textContent.includes(keyword));
 
             if (hasAdKeywords) {
-                // To jest reklama udająca treść. Zneutralizować.
                 logEvent(`HunterGuard: Hiding container with ad keywords despite content tags.`, container);
                 container.style.setProperty('display', 'none', 'important');
             } else {
-                // To prawdopodobnie prawdziwa treść. Zostawiamy.
                 logEvent(`HunterGuard: Spared container because it has content tags and no ad keywords.`, container);
             }
         } else {
-            // Kontener nie ma żadnych tagów treści. To czysta reklama. Zneutralizować.
             logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container);
             container.style.setProperty('display', 'none', 'important');
         }
     });
 }
 
-// --- DETECTION ROUTINE 3: Hiding Ad Placeholders (bez zmian) ---
 function hidePlaceholders() {
     const placeholderSelector = '.wp-section-placeholder-container';
     document.querySelectorAll(placeholderSelector).forEach(element => {
@@ -97,7 +98,7 @@ function hidePlaceholders() {
     });
 }
 
-// --- MODUŁ: Siatka bezpieczeństwa (bez zmian) ---
+// Sieć rybacka
 function applySafetyNet() {
     const CRITICAL_SELECTORS = ['body', '#wp-site-main', 'main', '#page', '#app', '#root'];
     CRITICAL_SELECTORS.forEach(selector => {
@@ -109,7 +110,7 @@ function applySafetyNet() {
     });
 }
 
-// --- Main Execution ---
+// egzekucja monarachów Francuskich
 function runAllRoutines() {
     hidePrimaryAds();
     hideFallbackAds();
@@ -117,12 +118,10 @@ function runAllRoutines() {
     applySafetyNet();
 }
 
-// --- Initialization ---
+// Inatelynizacjum
 setTimeout(() => {
-    chrome.storage.local.remove('inspector_logs', () => {
-        logEvent("Init: Script v26.0 (The Hunter Patch) started. Logs cleared.");
-        runAllRoutines();
-    });
+    logEvent("Init: Script v26.1 (The Archivist Patch) started. Appending to session logs.");
+    runAllRoutines();
 }, 500);
 
 setInterval(runAllRoutines, 1500);
