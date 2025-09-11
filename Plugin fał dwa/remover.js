@@ -1,9 +1,9 @@
-// remover.js - v26.2 - "The Controller Patch"
-console.log("WP Ad Inspector (v26.2) - CONTROLLER - Initialized.");
+// remover.js - v26.3 - "nazwa"
+console.log("WP Ad Inspector (v26.3) - CONTROLLER - Initialized.");
 
-const BLOCKING_STATE_KEY = 'isBlockingEnabled'; 
+const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 
-function logEvent(message, element = null) {
+function logEvent(message, element = null, isAdBlocked = false) {
     const timestamp = new Date().toLocaleTimeString();
     let logMessage = `[${timestamp}] ${message}`;
     if (element) {
@@ -18,6 +18,12 @@ function logEvent(message, element = null) {
         logs.push(logMessage);
         chrome.storage.local.set({ 'inspector_logs': logs });
     });
+
+    if (isAdBlocked) {
+        chrome.runtime.sendMessage({ type: "AD_BLOCKED" }).catch(error => {
+            console.error("Blomd podczas wysylania wiadomosci AD_BLOCKED:", error);
+        });
+    }
 }
 
 function hidePrimaryAds() {
@@ -30,7 +36,7 @@ function hidePrimaryAds() {
     document.querySelectorAll(primaryAdSelectors.join(',')).forEach(element => {
         const target = element.tagName === 'IFRAME' ? element.parentElement : element;
         if (target && target.parentElement && target.style.display !== 'none') {
-            logEvent("PrimaryDetection: Hiding generic ad element.", target);
+            logEvent("PrimaryDetection: Hiding generic ad element.", target, true); 
             target.style.setProperty('display', 'none', 'important');
         }
     });
@@ -42,7 +48,7 @@ function hideFallbackAds() {
     const MAX_AD_HEIGHT_PX = 450;
     const DO_NOT_HIDE_SELECTORS = ['#wp-site-main', 'main', '#page', '#app', '#root', '.article-body', '.wp-section-aside'];
     const CONTENT_TAGS = ['h2', 'h3', 'h4', 'h5', 'p', 'span'];
-    const AD_KEYWORDS = ['REKLAMA', 'SPONSOROWANY', 'PROMOCJA','MAT. SPONSOROWANY, MAT. P'];
+    const AD_KEYWORDS = ['REKLAMA', 'SPONSOROWANY', 'PROMOCJA','MAT. SPONSOROWANY', 'MAT. P'];
     document.querySelectorAll(`img[src*="${FALLBACK_CDN_HOST}"]`).forEach(img => {
         const link = img.closest('a');
         if (!link || !link.href) return;
@@ -56,17 +62,17 @@ function hideFallbackAds() {
         const hasContentTags = CONTENT_TAGS.some(selector => container.querySelector(selector));
         if (hasContentTags) {
             const textContent = container.textContent.toLowerCase();
-            const hasAdKeywords = AD_KEYWORDS.some(keyword => textContent.includes(keyword));
-            if (hasAdKeywords) { logEvent(`HunterGuard: Hiding container with ad keywords despite content tags.`, container); container.style.setProperty('display', 'none', 'important'); }
+            const hasAdKeywords = AD_KEYWORDS.some(keyword => textContent.includes(keyword.toLowerCase()));
+            if (hasAdKeywords) { logEvent(`HunterGuard: Hiding container with ad keywords despite content tags.`, container, true); container.style.setProperty('display', 'none', 'important'); }
             else { logEvent(`HunterGuard: Spared container because it has content tags and no ad keywords.`, container); }
-        } else { logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container); container.style.setProperty('display', 'none', 'important'); }
+        } else { logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container, true); container.style.setProperty('display', 'none', 'important'); }
     });
 }
 function hidePlaceholders() {
     const placeholderSelector = '.wp-section-placeholder-container';
     document.querySelectorAll(placeholderSelector).forEach(element => {
         if (element.style.display !== 'none') {
-            logEvent("PlaceholderCollapse: Hiding dedicated ad placeholder container.", element);
+            logEvent("PlaceholderCollapse: Hiding dedicated ad placeholder container.", element, true); 
             element.style.setProperty('display', 'none', 'important');
         }
     });
@@ -85,15 +91,19 @@ function applySafetyNet() {
 function runAllRoutines() {
     chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
         const isEnabled = result[BLOCKING_STATE_KEY];
-        
+
         if (!isEnabled) {
             if (!window.blockingDisabledLogged) {
                 logEvent("Controller: Blocking is disabled by user. Skipping all routines.");
-                window.blockingDisabledLogged = true; 
+                window.blockingDisabledLogged = true;
             }
             return;
         }
-        
+
+        if (window.blockingDisabledLogged) {
+            window.blockingDisabledLogged = false;
+        }
+
         hidePrimaryAds();
         hideFallbackAds();
         hidePlaceholders();
@@ -101,11 +111,10 @@ function runAllRoutines() {
     });
 }
 
-// Ioanetylizancjum
 setTimeout(() => {
     chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
         const isEnabled = result[BLOCKING_STATE_KEY];
-        logEvent(`Init: Script v26.2 (The Controller Patch) started. Blocking is currently ${isEnabled ? 'ENABLED' : 'DISABLED'}.`);
+        logEvent(`Init: Script v26.3 (The Controller Patch) started. Blocking is currently ${isEnabled ? 'ENABLED' : 'DISABLED'}.`);
         runAllRoutines();
     });
 }, 500);

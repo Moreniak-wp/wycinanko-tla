@@ -1,10 +1,11 @@
-// popup.js v7.2 
+// popup.js v7.3 
 
 document.addEventListener('DOMContentLoaded', () => {
     const toggleButton = document.getElementById('toggleBlocking');
     const downloadButton = document.getElementById('downloadLogs');
     const clearButton = document.getElementById('clearLogs');
-    
+    const resetCountButton = document.getElementById('resetCount');
+
     const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 
     function updateButtonState(isEnabled) {
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleButton.textContent = 'Uruchom Blokowanie';
             toggleButton.className = 'disabled';
         }
+        chrome.runtime.sendMessage({ type: "UPDATE_BLOCKING_STATE", isEnabled: isEnabled });
     }
 
     chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
@@ -25,9 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
             const currentState = result[BLOCKING_STATE_KEY];
             const newState = !currentState;
-            
+
             chrome.storage.local.set({ [BLOCKING_STATE_KEY]: newState }, () => {
-                updateButtonState(newState);
+                updateButtonState(newState); 
                 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                     if (tabs[0]) {
                         chrome.tabs.reload(tabs[0].id);
@@ -56,14 +58,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             } else {
-                alert('Brak loguw do pobrania w tej sesji.');
+                alert('Brak logów do pobrania w tej sesji.');
             }
         });
     });
 
     clearButton.addEventListener('click', () => {
         chrome.storage.local.remove('inspector_logs', () => {
-            alert('Logi zostaly wyczyszczone.');
+            alert('Logi zostały wyczyszczone.');
+        });
+    });
+
+    resetCountButton.addEventListener('click', () => {
+        chrome.runtime.sendMessage({ type: "RESET_AD_COUNT" }, (response) => {
+            alert('Licznik reklam został zresetowany.');
         });
     });
 });
