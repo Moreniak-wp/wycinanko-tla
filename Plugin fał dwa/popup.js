@@ -18,7 +18,7 @@ document.getElementById('downloadLogs').addEventListener('click', () => {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } else {
-            alert('Brak logów do pobrania w tej sesji.');
+            alert('Brak loguw do pobrania w tej sesji.');
         }
     });
 });
