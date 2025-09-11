@@ -1,20 +1,35 @@
-// background.js - v7.1
-console.log("WP Ad Remover (v7.1 Pro) - URUCHAMIAM TRYB CICHY.");
-
-function clearAllRules() {
-    chrome.declarativeNetRequest.getDynamicRules(existingRules => {
-        if (existingRules.length > 0) {
-            const ruleIdsToRemove = existingRules.map(rule => rule.id);
-            chrome.declarativeNetRequest.updateDynamicRules({
-                removeRuleIds: ruleIdsToRemove, addRules: []
-            }, () => {
-                if (chrome.runtime.lastError) console.error("Blomd podczas czyszczenia regul:", chrome.runtime.lastError);
-                else console.log("Reguly blokowania sieciowego wyczyszczone.");
-            });
+// background.js - v7.2 
+console.log("WP Ad Remover (v7.2 Pro) - URUCHAMIAM TRYB CICHY.");
+function setupNetRules() {
+    const LONG_URL_RULE_ID = 1001; 
+    const longUrlRule = {
+        id: LONG_URL_RULE_ID,
+        priority: 1, 
+        action: { type: 'block' }, 
+        condition: {
+            regexFilter: '.{101,}',
+            resourceTypes: [
+                "main_frame", "sub_frame", "stylesheet", "script",
+                "image", "font", "object", "xmlhttprequest", "ping",
+                "csp_report", "media", "websocket", "other"
+            ]
         }
+    };
+    chrome.declarativeNetRequest.getDynamicRules(existingRules => {
+        const ruleIdsToRemove = existingRules.map(rule => rule.id);
+        
+        chrome.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: ruleIdsToRemove, 
+            addRules: [longUrlRule]         
+        }, () => {
+            if (chrome.runtime.lastError) {
+                console.error("Blomd podczas ustawiania regu sieciowych:", chrome.runtime.lastError);
+            } else {
+                console.log("Reguy sieciowe zostay ustawione. Regua blokowania dugich URL jest aktywna.");
+            }
+        });
     });
 }
-
 const ICON_PATHS = {
     ENABLED: {
         "16": "icons/icon16_active.png",
@@ -27,34 +42,30 @@ const ICON_PATHS = {
         "128": "icons/icon128_inactive.png"
     }
 };
-
 function updateExtensionIcon(isEnabled) {
     const path = isEnabled ? ICON_PATHS.ENABLED : ICON_PATHS.DISABLED;
     chrome.action.setIcon({ path: path });
 }
-
 async function updateBadgeText() {
     const result = await chrome.storage.local.get('blockedAdsCount');
     const count = result.blockedAdsCount || 0;
-    chrome.action.setBadgeBackgroundColor({ color: [255, 0, 0, 255] }); 
+    chrome.action.setBadgeBackgroundColor({ color: [255, 0, 0, 255] });
     chrome.action.setBadgeText({ text: count > 0 ? count.toString() : '' });
 }
-
 chrome.runtime.onInstalled.addListener(() => {
-    clearAllRules();
+    setupNetRules(); 
     chrome.storage.local.get({ isBlockingEnabled: true }, (result) => {
         updateExtensionIcon(result.isBlockingEnabled);
-        updateBadgeText(); 
+        updateBadgeText();
     });
 });
 chrome.runtime.onStartup.addListener(() => {
-    clearAllRules();
+    setupNetRules(); 
     chrome.storage.local.get({ isBlockingEnabled: true }, (result) => {
         updateExtensionIcon(result.isBlockingEnabled);
-        updateBadgeText(); 
+        updateBadgeText();
     });
 });
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "UPDATE_BLOCKING_STATE") {
         updateExtensionIcon(message.isEnabled);
@@ -74,4 +85,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ status: "Licznik reklam zresetowany" });
         });
     }
+    return true;
 });
