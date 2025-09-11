@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearButton = document.getElementById('clearLogs');
     const resetCountButton = document.getElementById('resetCount');
 
+    const pickElementButton = document.getElementById('pickElement');
+
     const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 
     function updateButtonState(isEnabled) {
@@ -38,7 +40,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
-
+ pickElementButton.addEventListener('click', () => {
+     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0] && tabs[0].id) {
+                 chrome.tabs.sendMessage(tabs[0].id, { type: "ACTIVATE_PICKER" }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error("Nie można aktywować pipety na tej stronie:", chrome.runtime.lastError.message);
+                        alert("Nie można aktywować pipety na tej stronie. Upewnij się, że jesteś na stronie obsługiwanej przez rozszerzenie (np. wp.pl).");
+                    } else {
+                        console.log(response.status);
+                    }
+                });
+                window.close();
+            }
+        });
+    });
     downloadButton.addEventListener('click', () => {
         chrome.storage.local.get(['inspector_logs'], (result) => {
             if (result.inspector_logs && result.inspector_logs.length > 0) {

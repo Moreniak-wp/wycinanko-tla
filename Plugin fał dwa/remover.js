@@ -1,7 +1,11 @@
-// remover.js - v26.3 - "nazwa"
+// remover.js - v26.4 - "Pipis"
 console.log("WP Ad Inspector (v26.3) - CONTROLLER - Initialized.");
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
+const CUSTOM_RULES_KEY = 'customBlockedSelectors';
+
+let isPickerActive = false;
+let highlightedElement = null;
 
 function logEvent(message, element = null, isAdBlocked = false) {
     const timestamp = new Date().toLocaleTimeString();
@@ -26,6 +30,90 @@ function logEvent(message, element = null, isAdBlocked = false) {
     }
 }
 
+function generateSelector(el) {
+    if (!(el instanceof Element)) return;
+    const parts = [];
+    while (el && el.nodeType === Node.ELEMENT_NODE) {
+        let selector = el.nodeName.toLowerCase();
+        if (el.id) {
+            selector += '#' + el.id;
+            parts.unshift(selector);
+            break; 
+        } else {
+            let sib = el, nth = 1;
+            while (sib = sib.previousElementSibling) {
+                if (sib.nodeName.toLowerCase() == selector) nth++;
+            }
+            if (nth != 1) selector += `:nth-of-type(${nth})`;
+  }
+        parts.unshift(selector);
+        el = el.parentNode;
+    }
+    return parts.join(' > ');
+}
+
+function handleMouseOver(e) {
+    if (highlightedElement) {
+        highlightedElement.style.outline = ''; 
+    }
+    highlightedElement = e.target;
+    highlightedElement.style.outline = '2px dashed red'; 
+}
+
+async function handleClick(e) {
+    e.preventDefault();
+    e.stopPropagation(); 
+
+    const target = e.target;
+    const newSelector = generateSelector(target);
+    
+    logEvent(`Picker: User selected element to hide with selector: ${newSelector}`, target);
+const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
+    const customRules = result[CUSTOM_RULES_KEY];
+    if (!customRules.includes(newSelector)) {
+        customRules.push(newSelector);
+        await chrome.storage.local.set({ [CUSTOM_RULES_KEY]: customRules });
+        logEvent(`Picker: New rule saved. Total custom rules: ${customRules.length}`);
+    }
+target.style.display = 'none';
+
+    deactivatePicker();
+}
+function activatePicker() {
+    if (isPickerActive) return;
+    isPickerActive = true;
+    logEvent("Picker: Activated.");
+    document.addEventListener('mouseover', handleMouseOver);
+    document.addEventListener('click', handleClick, true); 
+}
+function deactivatePicker() {
+    if (!isPickerActive) return;
+    isPickerActive = false;
+    if (highlightedElement) {
+        highlightedElement.style.outline = '';
+    }
+    document.removeEventListener('mouseover', handleMouseOver);
+    document.removeEventListener('click', handleClick, true);
+    logEvent("Picker: Deactivated.");
+}
+async function applyCustomRules() {
+    const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
+    const customRules = result[CUSTOM_RULES_KEY];
+    if (customRules.length === 0) return;
+
+    for (const selector of customRules) {
+        try {
+            document.querySelectorAll(selector).forEach(element => {
+                if (element.style.display !== 'none') {
+                    logEvent(`CustomRule: Hiding element matching '${selector}'.`, element);
+                    element.style.setProperty('display', 'none', 'important');
+                }
+            });
+             } catch (e) {
+            logEvent(`CustomRule Error: Invalid selector '${selector}'.`);
+        }
+    }
+}
 function hidePrimaryAds() {
     const primaryAdSelectors = [
         '[id^="google_ads_iframe_"]', '[id^="div-gpt-ad-"]', '.adsbygoogle',
@@ -88,36 +176,41 @@ function applySafetyNet() {
     });
 }
 
-function runAllRoutines() {
-    chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
-        const isEnabled = result[BLOCKING_STATE_KEY];
-
-        if (!isEnabled) {
-            if (!window.blockingDisabledLogged) {
-                logEvent("Controller: Blocking is disabled by user. Skipping all routines.");
-                window.blockingDisabledLogged = true;
-            }
-            return;
+async function runAllRoutines() {
+    const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
+    if (!result[BLOCKING_STATE_KEY]) {
+        if (!window.blockingDisabledLogged) {
+            logEvent("Controller: Blocking is disabled by user. Skipping all routines.");
+            window.blockingDisabledLogged = true;
         }
+        return;
+    }
 
-        if (window.blockingDisabledLogged) {
-            window.blockingDisabledLogged = false;
-        }
+       if (window.blockingDisabledLogged) {
+        window.blockingDisabledLogged = false;
+    }
 
-        hidePrimaryAds();
-        hideFallbackAds();
-        hidePlaceholders();
-        applySafetyNet();
-    });
-}
+        await applyCustomRules(); 
+    
+    hidePrimaryAds();
+    hideFallbackAds();
+    hidePlaceholders();
+    applySafetyNet();
+};
 
-setTimeout(() => {
-    chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
-        const isEnabled = result[BLOCKING_STATE_KEY];
-        logEvent(`Init: Script v26.3 (The Controller Patch) started. Blocking is currently ${isEnabled ? 'ENABLED' : 'DISABLED'}.`);
-        runAllRoutines();
-    });
+setTimeout(async () => {
+    const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
+    logEvent(`Init: Script v26.4 (Pipis Patch) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
+    await runAllRoutines();
 }, 500);
 
+
 setInterval(runAllRoutines, 1500);
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === "ACTIVATE_PICKER") {
+        activatePicker();
+        sendResponse({ status: "Picker mode activated on page" });
+        return true;
+    }
+});
 logEvent("Init: Safe polling mechanism for all routines is now active.");
