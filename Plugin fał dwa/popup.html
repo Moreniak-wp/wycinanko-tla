@@ -6,12 +6,21 @@
         body { text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000; color: red; width: 200px; font-family: sans-serif; text-align: center; padding: 10px; background: #8322c3;
 background: radial-gradient(circle, rgba(131, 34, 195, 1) 0%, rgba(193, 12, 247, 1) 20%, rgba(217, 28, 75, 1) 40%, rgba(227, 214, 32, 1) 100%); }
         button { width: 100%; padding: 10px; font-size: 16px; cursor: pointer; border-radius: 15px; border-style: groove; border-width: 8px; border-color: blueviolet; background-color: midnightblue; color: red; margin-bottom: 8px; }
+        button#toggleBlocking.enabled { background-color: #c70000; border-color: #ff4d4d; color: white; }
+        button#toggleBlocking.disabled { background-color: #006400; border-color: #32cd32; color: white; }
+        hr { border: 1px solid blueviolet; margin: 15px 0; }
     </style>
 </head>
 <body>
     <h3>WP Ad Remover Pro</h3>
+    
+    <button id="toggleBlocking">Ładowanie...</button>
+
+    <hr>
+    
     <button id="downloadLogs">Pobierz Logi</button>
-    <button id="clearLogs">Wyczysc Logi</button>
+    <button id="clearLogs">Wyczyść Logi</button>
+    
     <script src="popup.js"></script>
 </body>
 </html>
