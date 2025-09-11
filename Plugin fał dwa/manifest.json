@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "WP Ad Inspector (v21.0)",
+  "version": "21.0",
+  "description": "Stable ad hiding with advanced logging capabilities.",
+  "permissions": [
+    "declarativeNetRequest",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.wp.pl/*",
+        "*://*.o2.pl/*",
+        "*://*.money.pl/*",
+        "*://*.pudelek.pl/*",
+        "*://*.sportowefakty.wp.pl/*",
+        "*://*.dobreprogramy.pl/*",
+        "*://*.autokult.pl/*",
+        "*://*.autocentrum.pl/*",
+        "*://*.domodi.pl/*",
+        "*://*.allani.pl/*",
+        "*://*.extradom.pl/*",
+        "*://*.superauto.pl/*",
+        "*://*.totalmoney.pl/*",
+        "*://*.parenting.pl/*",
+        "*://*.abczdrowie.pl/*"
+      ],
+      "js": ["remover.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}
