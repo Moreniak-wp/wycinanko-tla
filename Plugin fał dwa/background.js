@@ -7,7 +7,7 @@ function setupNetRules() {
         priority: 1, 
         action: { type: 'block' }, 
         condition: {
-            regexFilter: '.{101,}',
+            regexFilter: '.{150,}',
             resourceTypes: [
                 "main_frame", "sub_frame", "stylesheet", "script",
                 "image", "font", "object", "xmlhttprequest", "ping",
