@@ -8,7 +8,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const pickElementButton = document.getElementById('pickElement');
 
+    const statusMessage = document.getElementById('statusMessage');
+    let statusTimeout; 
+
     const BLOCKING_STATE_KEY = 'isBlockingEnabled';
+
+        function showStatus(message, duration = 2500) {
+        clearTimeout(statusTimeout); 
+        statusMessage.textContent = message;
+        statusMessage.style.opacity = '1';
+
+        statusTimeout = setTimeout(() => {
+            statusMessage.style.opacity = '0';
+        }, duration);
+    }
 
     function updateButtonState(isEnabled) {
         if (isEnabled) {
@@ -40,18 +53,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
- pickElementButton.addEventListener('click', () => {
-     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+pickElementButton.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0] && tabs[0].id) {
-                 chrome.tabs.sendMessage(tabs[0].id, { type: "ACTIVATE_PICKER" }, (response) => {
+                chrome.tabs.sendMessage(tabs[0].id, { type: "ACTIVATE_PICKER" }, (response) => {
                     if (chrome.runtime.lastError) {
-                        console.error("Nie można aktywować pipety na tej stronie:", chrome.runtime.lastError.message);
-                        alert("Nie można aktywować pipety na tej stronie. Upewnij się, że jesteś na stronie obsługiwanej przez rozszerzenie (np. wp.pl).");
+                        showStatus("Pipeta jest niedostępna na tej stronie.", 3500);
                     } else {
                         console.log(response.status);
-                    }
+                        window.close();
+                         }
                 });
-                window.close();
+            } else {
+                 showStatus("Nie znaleziono aktywnej karty.", 3000);
             }
         });
     });
@@ -74,20 +88,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             } else {
-                alert('Brak logów do pobrania w tej sesji.');
+                showStatus('Brak logów do pobrania.');
             }
         });
     });
 
     clearButton.addEventListener('click', () => {
         chrome.storage.local.remove('inspector_logs', () => {
-            alert('Logi commited die.');
+             showStatus('Logi commited die.');
         });
     });
 
     resetCountButton.addEventListener('click', () => {
         chrome.runtime.sendMessage({ type: "RESET_AD_COUNT" }, (response) => {
-            alert('Licznik reklam został zresetowany.');
+             showStatus('Licznik reklam został zresetowany.');
         });
     });
 });

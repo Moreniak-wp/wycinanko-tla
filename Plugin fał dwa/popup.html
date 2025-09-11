@@ -11,6 +11,15 @@ background: radial-gradient(circle, rgba(131, 34, 195, 1) 0%, rgba(193, 12, 247,
         button#toggleBlocking.enabled { background-color: #c70000; border-color: #ff4d4d; color: white; }
         button#toggleBlocking.disabled { background-color: #006400; border-color: #32cd32; color: white; }
         hr { border: 1px solid blueviolet; margin: 15px 0; }
+        #statusMessage {
+            min-height: 18px; 
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px #000;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0; 
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -23,6 +32,7 @@ background: radial-gradient(circle, rgba(131, 34, 195, 1) 0%, rgba(193, 12, 247,
     <button id="resetCount">Zresetuj licznik reklam</button>
     <button id="downloadLogs">Pobierz Logi</button>
     <button id="clearLogs">Zajeb Logi</button>
+     <div id="statusMessage"></div>
     
     <script src="popup.js"></script>
 </body>

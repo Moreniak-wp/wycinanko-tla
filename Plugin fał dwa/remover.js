@@ -1,4 +1,4 @@
-// remover.js - v26.4 - "Pipis"
+// remover.js - v26.5 - "Pipis Fix"
 console.log("WP Ad Inspector (v26.3) - CONTROLLER - Initialized.");
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
@@ -52,6 +52,27 @@ function generateSelector(el) {
     return parts.join(' > ');
 }
 
+async function handleClick(e) {
+     e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    const target = e.target;
+    const newSelector = generateSelector(target);
+    
+    logEvent(`Picker: User selected element to hide with selector: ${newSelector}`, target);
+
+    const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
+    const customRules = result[CUSTOM_RULES_KEY];
+    if (!customRules.includes(newSelector)) {
+        customRules.push(newSelector);
+        await chrome.storage.local.set({ [CUSTOM_RULES_KEY]: customRules });
+        logEvent(`Picker: New rule saved. Total custom rules: ${customRules.length}`);
+    }
+
+    target.style.display = 'none';
+
+    deactivatePicker();
+}
 function handleMouseOver(e) {
     if (highlightedElement) {
         highlightedElement.style.outline = ''; 
@@ -60,31 +81,13 @@ function handleMouseOver(e) {
     highlightedElement.style.outline = '2px dashed red'; 
 }
 
-async function handleClick(e) {
-    e.preventDefault();
-    e.stopPropagation(); 
-
-    const target = e.target;
-    const newSelector = generateSelector(target);
-    
-    logEvent(`Picker: User selected element to hide with selector: ${newSelector}`, target);
-const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
-    const customRules = result[CUSTOM_RULES_KEY];
-    if (!customRules.includes(newSelector)) {
-        customRules.push(newSelector);
-        await chrome.storage.local.set({ [CUSTOM_RULES_KEY]: customRules });
-        logEvent(`Picker: New rule saved. Total custom rules: ${customRules.length}`);
-    }
-target.style.display = 'none';
-
-    deactivatePicker();
-}
 function activatePicker() {
     if (isPickerActive) return;
     isPickerActive = true;
     logEvent("Picker: Activated.");
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('click', handleClick, true); 
+     document.addEventListener('mousedown', handleClick, true);
 }
 function deactivatePicker() {
     if (!isPickerActive) return;
@@ -94,6 +97,7 @@ function deactivatePicker() {
     }
     document.removeEventListener('mouseover', handleMouseOver);
     document.removeEventListener('click', handleClick, true);
+    document.removeEventListener('mousedown', handleClick, true);
     logEvent("Picker: Deactivated.");
 }
 async function applyCustomRules() {
@@ -186,24 +190,23 @@ async function runAllRoutines() {
         return;
     }
 
-       if (window.blockingDisabledLogged) {
+    if (window.blockingDisabledLogged) {
         window.blockingDisabledLogged = false;
     }
-
-        await applyCustomRules(); 
+    
+    await applyCustomRules(); 
     
     hidePrimaryAds();
     hideFallbackAds();
     hidePlaceholders();
     applySafetyNet();
-};
+}
 
 setTimeout(async () => {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
-    logEvent(`Init: Script v26.4 (Pipis Patch) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
+    logEvent(`Init: Script v26.5 (PIPIS Fix) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
     await runAllRoutines();
 }, 500);
-
 
 setInterval(runAllRoutines, 1500);
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -213,4 +216,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 });
+
 logEvent("Init: Safe polling mechanism for all routines is now active.");
