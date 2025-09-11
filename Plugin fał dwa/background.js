@@ -10,8 +10,8 @@ function clearAllRules() {
             chrome.declarativeNetRequest.updateDynamicRules({
                 removeRuleIds: ruleIdsToRemove, addRules: []
             }, () => {
-                if (chrome.runtime.lastError) console.error("Błąd podczas czyszczenia reguł:", chrome.runtime.lastError);
-                else console.log("Reguły blokowania sieciowego wyczyszczone.");
+                if (chrome.runtime.lastError) console.error("Blomd podczas czyszczenia regul:", chrome.runtime.lastError);
+                else console.log("Reguly blokowania sieciowego wyczyszczone.");
             });
         }
     });
