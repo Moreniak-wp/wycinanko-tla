@@ -21,7 +21,7 @@ function logEvent(message, element = null, isAdBlocked = false) {
 
     if (isAdBlocked) {
         chrome.runtime.sendMessage({ type: "AD_BLOCKED" }).catch(error => {
-            console.error("Blomd podczas wysylania wiadomosci AD_BLOCKED:", error);
+            console.error("Błąd podczas wysyłania wiadomosci AD_BLOCKED:", error);
         });
     }
 }

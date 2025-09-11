@@ -23,9 +23,9 @@ function setupNetRules() {
             addRules: [longUrlRule]         
         }, () => {
             if (chrome.runtime.lastError) {
-                console.error("Blomd podczas ustawiania regu sieciowych:", chrome.runtime.lastError);
+                console.error("Błąc podczas ustawiania reguł sieciowych:", chrome.runtime.lastError);
             } else {
-                console.log("Reguy sieciowe zostay ustawione. Regua blokowania dugich URL jest aktywna.");
+                console.log("Reguły sieciowe zostały ustawione. Reguła blokowania długich URL jest aktywna.");
             }
         });
     });

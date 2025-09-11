@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             } else {
-                alert('Brak loguf do pobrania w tej sesji.');
+                alert('Brak logów do pobrania w tej sesji.');
             }
         });
     });
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resetCountButton.addEventListener('click', () => {
         chrome.runtime.sendMessage({ type: "RESET_AD_COUNT" }, (response) => {
-            alert('Licznik reklam zostau zresetowany.');
+            alert('Licznik reklam został zresetowany.');
         });
     });
 });
