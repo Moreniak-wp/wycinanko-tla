@@ -1,10 +1,8 @@
 // background.js - v7.0
-// Utrzymujemy TRYB CICHY.
 console.log("WP Ad Remover (v7.0 Pro) - URUCHAMIAM TRYB CICHY.");
 function clearAllRules() {  }
 chrome.runtime.onInstalled.addListener(clearAllRules);
 chrome.runtime.onStartup.addListener(clearAllRules);
-// Funkcja czyszcząca wszystkie dynamiczne reguły
 function clearAllRules() {
     chrome.declarativeNetRequest.getDynamicRules(existingRules => {
         if (existingRules.length > 0) {
@@ -18,7 +16,5 @@ function clearAllRules() {
         }
     });
 }
-// Uruchom czyszczenie przy instalacji/aktualizacji wtyczki
 chrome.runtime.onInstalled.addListener(clearAllRules);
-// Uruchom czyszczenie również przy starcie przeglądarki
 chrome.runtime.onStartup.addListener(clearAllRules);
