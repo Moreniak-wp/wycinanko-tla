@@ -58,20 +58,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             } else {
-                alert('Brak logów do pobrania w tej sesji.');
+                alert('Brak loguf do pobrania w tej sesji.');
             }
         });
     });
 
     clearButton.addEventListener('click', () => {
         chrome.storage.local.remove('inspector_logs', () => {
-            alert('Logi zostały wyczyszczone.');
+            alert('Logi commited die.');
         });
     });
 
     resetCountButton.addEventListener('click', () => {
         chrome.runtime.sendMessage({ type: "RESET_AD_COUNT" }, (response) => {
-            alert('Licznik reklam został zresetowany.');
+            alert('Licznik reklam zostau zresetowany.');
         });
     });
 });

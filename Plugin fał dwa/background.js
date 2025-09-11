@@ -9,7 +9,7 @@ function clearAllRules() {
                 removeRuleIds: ruleIdsToRemove, addRules: []
             }, () => {
                 if (chrome.runtime.lastError) console.error("Blomd podczas czyszczenia regul:", chrome.runtime.lastError);
-                else console.log("Regu,y blokowania sieciowego wyczyszczone.");
+                else console.log("Reguly blokowania sieciowego wyczyszczone.");
             });
         }
     });
