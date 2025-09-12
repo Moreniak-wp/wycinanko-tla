@@ -6,7 +6,8 @@
   "permissions": [
     "declarativeNetRequest",
     "storage",
-    "tabs"
+    "tabs",
+    "proxy"
   ],
   "host_permissions": [
     "*://*/*"

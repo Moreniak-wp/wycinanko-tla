@@ -36,6 +36,11 @@ const STRINGS = {
         RESPONSE_AD_COUNTER_UPDATED: "Licznik reklam zaktualizowany",
         RESPONSE_AD_COUNTER_RESET: "Licznik reklam zresetowany"
     },
+       PROXY: {
+        ENABLED: "[Proxy] Proxy włączone:",
+        DISABLED: "[Proxy] Proxy wyłączone. Używane są ustawienia systemowe.",
+        SETUP_ERROR: "[Proxy] Błąd podczas konfiguracji proxy:",
+        RESPONSE_UPDATED: "Ustawienia proxy zostały zaktualizowane",
     REMOVER: {
         INIT: "WP Ad Inspector (v27.0) - CONTROLLER - Initialized.",
         INIT_SAFE_POLLING: "Init: Safe polling mechanism for all routines is now active.",
