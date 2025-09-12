@@ -1,5 +1,5 @@
-// remover.js - v26.5 - "Pipis Fix" 
-console.log("WP Ad Inspector (v26.3) - CONTROLLER - Initialized.");
+// remover.js - v26.6 - "Final pipis"
+console.log("WP Ad Inspector (v26.6) - CONTROLLER - Initialized.");
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';
@@ -36,49 +36,58 @@ function generateSelector(el) {
     while (el && el.nodeType === Node.ELEMENT_NODE) {
         let selector = el.nodeName.toLowerCase();
         if (el.id) {
-            selector += '#' + el.id;
-            parts.unshift(selector);
-            break;
-        } else {
-            let sib = el, nth = 1;
-            while (sib = sib.previousElementSibling) {
-                if (sib.nodeName.toLowerCase() == selector) nth++;
+            try {
+                if (document.querySelector(el.nodeName.toLowerCase() + '#' + el.id) === el) {
+                    selector += '#' + el.id;
+                    parts.unshift(selector);
+                    break;
+                }
+            } catch (e) {
             }
-            if (nth != 1) selector += `:nth-of-type(${nth})`;
         }
+        let sib = el, nth = 1;
+        while (sib = sib.previousElementSibling) {
+            if (sib.nodeName.toLowerCase() == selector) nth++;
+        }
+        if (nth != 1) selector += `:nth-of-type(${nth})`;
         parts.unshift(selector);
         el = el.parentNode;
     }
     return parts.join(' > ');
 }
+async function saveNewCustomRule(selector) {
+    if (!selector) return;
 
-async function processElementSelection(target) {
-    const newSelector = generateSelector(target);
-
-    logEvent(`Picker: User selected element to hide with selector: ${newSelector}`, target);
-
+    logEvent(`Picker: Saving rule for selector: ${selector}`);
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
-    if (!customRules.includes(newSelector)) {
-        customRules.push(newSelector);
+    if (!customRules.includes(selector)) {
+        customRules.push(selector);
         await chrome.storage.local.set({ [CUSTOM_RULES_KEY]: customRules });
         logEvent(`Picker: New rule saved. Total custom rules: ${customRules.length}`);
+    } else {
+        logEvent(`Picker: Rule already exists. No action taken.`);
     }
-
-    target.style.display = 'none';
-    deactivatePicker();
 }
-
-function handleClick(e) {
+function handleElementSelection(e) {
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
-    processElementSelection(e.target);
+    const target = e.target;
+    const selector = generateSelector(target);
+    if (target) {
+        target.remove();
+    }
+    deactivatePicker();
+    saveNewCustomRule(selector);
+    return false;
 }
 
 function handleMouseOver(e) {
     if (highlightedElement) {
-        highlightedElement.style.outline = '';
+        try {
+            highlightedElement.style.outline = '';
+        } catch (e) {  }
     }
     highlightedElement = e.target;
     highlightedElement.style.outline = '2px dashed red';
@@ -89,21 +98,21 @@ function activatePicker() {
     isPickerActive = true;
     logEvent("Picker: Activated.");
     document.addEventListener('mouseover', handleMouseOver, true);
-    document.addEventListener('pointerdown', handleClick, true);
-    document.addEventListener('mousedown', handleClick, true);
-    document.addEventListener('click', handleClick, true);
+    document.addEventListener('mousedown', handleElementSelection, true);
+    document.addEventListener('click', handleElementSelection, true);
 }
 
 function deactivatePicker() {
     if (!isPickerActive) return;
     isPickerActive = false;
     if (highlightedElement) {
-        highlightedElement.style.outline = '';
+        try {
+            highlightedElement.style.outline = '';
+        } catch (e) { }
     }
     document.removeEventListener('mouseover', handleMouseOver, true);
-    document.removeEventListener('pointerdown', handleClick, true);
-    document.removeEventListener('mousedown', handleClick, true);
-    document.removeEventListener('click', handleClick, true);
+    document.removeEventListener('mousedown', handleElementSelection, true);
+    document.removeEventListener('click', handleElementSelection, true);
     logEvent("Picker: Deactivated.");
 }
 
@@ -134,7 +143,7 @@ function hidePrimaryAds() {
         'div[data-google-query-id]', '[aria-label="Advertisement"]'
     ];
     document.querySelectorAll(primaryAdSelectors.join(',')).forEach(element => {
-        const target = element.tagName === 'IFRAME' ? element.parentElement : element;
+        const target = element.closest('div, ins, iframe');
         if (target && target.parentElement && target.style.display !== 'none') {
             logEvent("PrimaryDetection: Hiding generic ad element.", target, true);
             target.style.setProperty('display', 'none', 'important');
@@ -155,17 +164,16 @@ function hideFallbackAds() {
         if (!link || !link.href) return;
         const isLongRedirect = link.href.startsWith('https://www.wp.pl/') && link.href.length > TRACKING_LINK_LENGTH_THRESHOLD;
         const isDirectAdDomain = AD_DOMAINS.some(domain => link.href.includes(domain));
-        if (!isLongRedirect && !isDirectAdDomain) { logEvent(`FallbackGuard: Link is not a tracking link. Sparing.`, link); return; }
+        if (!isLongRedirect && !isDirectAdDomain) { return; }
         const container = link.parentElement;
         if (!container || container.style.display === 'none') return;
-        if (DO_NOT_HIDE_SELECTORS.some(selector => container.matches(selector))) { logEvent(`FallbackGuard: Container matches a DO_NOT_HIDE selector. Sparing.`, container); return; }
-        if (container.getBoundingClientRect().height > MAX_AD_HEIGHT_PX) { logEvent(`FallbackGuard: Container is taller than MAX_AD_HEIGHT_PX. Sparing.`, container); return; }
+        if (DO_NOT_HIDE_SELECTORS.some(selector => container.matches(selector))) { return; }
+        if (container.getBoundingClientRect().height > MAX_AD_HEIGHT_PX) { return; }
         const hasContentTags = CONTENT_TAGS.some(selector => container.querySelector(selector));
         if (hasContentTags) {
             const textContent = container.textContent.toLowerCase();
             const hasAdKeywords = AD_KEYWORDS.some(keyword => textContent.includes(keyword.toLowerCase()));
             if (hasAdKeywords) { logEvent(`HunterGuard: Hiding container with ad keywords despite content tags.`, container, true); container.style.setProperty('display', 'none', 'important'); }
-            else { logEvent(`HunterGuard: Spared container because it has content tags and no ad keywords.`, container); }
         } else { logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container, true); container.style.setProperty('display', 'none', 'important'); }
     });
 }
@@ -206,7 +214,6 @@ async function runAllRoutines() {
     }
 
     await applyCustomRules();
-
     hidePrimaryAds();
     hideFallbackAds();
     hidePlaceholders();
@@ -215,7 +222,7 @@ async function runAllRoutines() {
 
 setTimeout(async () => {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
-    logEvent(`Init: Script v26.5 (PIPIS Fix) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
+    logEvent(`Init: Script v26.6 (Final Fix) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
     await runAllRoutines();
 }, 500);
 
