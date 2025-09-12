@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const toggleButton = document.getElementById('toggleBlocking');
     const downloadButton = document.getElementById('downloadLogs');
-    const clearButton = 'getElementById'('clearLogs');
+    const clearButton = document.getElementById('clearLogs');
     const resetCountButton = document.getElementById('resetCount');
     const pickElementButton = document.getElementById('pickElement');
     const resetCustomRulesButton = document.getElementById('resetCustomRules');
