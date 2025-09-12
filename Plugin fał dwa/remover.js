@@ -1,5 +1,5 @@
-// remover.js - v26.7 - Pipiscepcja
-console.log("WP Ad Inspector (v26.7) - CONTROLLER - Initialized.");
+// remover.js - v27.0 - "Secret of the fucking PIPIS" 
+console.log("WP Ad Inspector (v27.0) - CONTROLLER - Initialized.");
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';
@@ -31,7 +31,13 @@ function logEvent(message, element = null, isAdBlocked = false) {
 }
 
 function generateSelector(el) {
-    if (!(el instanceof Element)) return;
+    if (!(el instanceof Element)) return null;
+    const root = el.getRootNode();
+    if (root instanceof ShadowRoot) {
+        if (el.id) return `#${CSS.escape(el.id)}`;
+        return `${el.tagName.toLowerCase()}`;
+    }
+
     const parts = [];
     while (el && el.nodeType === Node.ELEMENT_NODE) {
         let selector = el.nodeName.toLowerCase();
@@ -42,8 +48,7 @@ function generateSelector(el) {
                     parts.unshift(selector);
                     break;
                 }
-            } catch (e) {
-            }
+            } catch (e) {  }
         }
         let sib = el, nth = 1;
         while (sib = sib.previousElementSibling) {
@@ -58,7 +63,6 @@ function generateSelector(el) {
 
 async function saveNewCustomRule(selector) {
     if (!selector) return;
-
     logEvent(`Picker: Saving rule for selector: ${selector}`);
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
@@ -76,32 +80,45 @@ function handleElementSelection(e) {
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-    const target = e.target;
+    const trueTarget = e.composedPath && e.composedPath()[0] || e.target;
+    let elementToRemove = trueTarget;
     let selector = null;
+
     try {
-        selector = generateSelector(target);
+        const root = trueTarget.getRootNode();
+        if (root instanceof ShadowRoot) {
+            logEvent("Picker: Shadow DOM detected. Targeting host element.", root.host);
+            elementToRemove = root.host;
+        }
+        selector = generateSelector(elementToRemove);
     } catch (err) {
-        logEvent(`!!! Picker Error: Failed to generate selector, but still removing element. Error: ${err.message}`);
+        logEvent(`!!! Picker Error: Failed during element analysis. Fallback to removing true target. Error: ${err.message}`);
+        elementToRemove = trueTarget;
     }
 
-    if (target) {
-        target.remove();
+    if (elementToRemove && elementToRemove.remove) {
+        elementToRemove.remove();
+        logEvent("Picker: Element removed successfully.", elementToRemove);
+    } else {
+        logEvent("Picker: FAILED to remove element.", elementToRemove);
     }
 
     deactivatePicker();
     saveNewCustomRule(selector);
-    
     return false;
 }
 
 function handleMouseOver(e) {
+    const trueTarget = e.composedPath && e.composedPath()[0] || e.target;
+    if (highlightedElement === trueTarget) return;
+
     if (highlightedElement) {
         try {
             highlightedElement.style.outline = '';
         } catch (e) {  }
     }
-    highlightedElement = e.target;
-    highlightedElement.style.outline = '2px dashed red';
+    highlightedElement = trueTarget;
+    highlightedElement.style.outline = '3px dashed #FF00FF';
 }
 
 function activatePicker() {
@@ -119,7 +136,7 @@ function deactivatePicker() {
     if (highlightedElement) {
         try {
             highlightedElement.style.outline = '';
-        } catch (e) {  }
+        } catch (e) { }
     }
     document.removeEventListener('mouseover', handleMouseOver, true);
     document.removeEventListener('mousedown', handleElementSelection, true);
@@ -137,6 +154,13 @@ async function applyCustomRules() {
             document.querySelectorAll(selector).forEach(element => {
                 if (element.style.display !== 'none') {
                     element.style.setProperty('display', 'none', 'important');
+                }
+            });
+            document.querySelectorAll('*').forEach(el => {
+                if (el.shadowRoot) {
+                    el.shadowRoot.querySelectorAll(selector).forEach(shadowEl => {
+                        shadowEl.style.setProperty('display', 'none', 'important');
+                    });
                 }
             });
         } catch (e) {
@@ -160,6 +184,7 @@ function hidePrimaryAds() {
         }
     });
 }
+
 function hideFallbackAds() {
     const FALLBACK_CDN_HOST = 'v.wpimg.pl';
     const TRACKING_LINK_LENGTH_THRESHOLD = 150;
@@ -182,8 +207,14 @@ function hideFallbackAds() {
         if (hasContentTags) {
             const textContent = container.textContent.toLowerCase();
             const hasAdKeywords = AD_KEYWORDS.some(keyword => textContent.includes(keyword.toLowerCase()));
-            if (hasAdKeywords) { logEvent(`HunterGuard: Hiding container with ad keywords despite content tags.`, container, true); container.style.setProperty('display', 'none', 'important'); }
-        } else { logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container, true); container.style.setProperty('display', 'none', 'important'); }
+            if (hasAdKeywords) {
+                logEvent(`HunterGuard: Hiding container with ad keywords despite content tags.`, container, true);
+                container.style.setProperty('display', 'none', 'important');
+            }
+        } else {
+            logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container, true);
+            container.style.setProperty('display', 'none', 'important');
+        }
     });
 }
 
@@ -191,7 +222,6 @@ function hidePlaceholders() {
     const placeholderSelector = '.wp-section-placeholder-container';
     document.querySelectorAll(placeholderSelector).forEach(element => {
         if (element.style.display !== 'none') {
-            logEvent("PlaceholderCollapse: Hiding dedicated ad placeholder container.", element, true);
             element.style.setProperty('display', 'none', 'important');
         }
     });
@@ -217,11 +247,9 @@ async function runAllRoutines() {
         }
         return;
     }
-
     if (window.blockingDisabledLogged) {
         window.blockingDisabledLogged = false;
     }
-
     await applyCustomRules();
     hidePrimaryAds();
     hideFallbackAds();
@@ -231,7 +259,7 @@ async function runAllRoutines() {
 
 setTimeout(async () => {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
-    logEvent(`Init: Script v26.6 (Final Fix) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
+    logEvent(`Init: Script v27.0 (Shadow of the PIPIS) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
     await runAllRoutines();
 }, 500);
 
@@ -240,7 +268,7 @@ setInterval(runAllRoutines, 1500);
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "ACTIVATE_PICKER") {
         activatePicker();
-        sendResponse({ status: "Picker mode activated on page" });
+        sendResponse({ status: "Pipis tryb aktywny, spróbuj nie rozpierdolić strony" });
         return true;
     }
 });
