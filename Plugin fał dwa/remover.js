@@ -1,5 +1,4 @@
-// remover.js - v27.0 - "Majster Wajt musisz tą listę podpisać" 
-console.log("WP Ad Inspector (v27.0) - CONTROLLER - Initialized.");
+console.log(STRINGS.REMOVER.INIT);
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';
@@ -10,14 +9,14 @@ let highlightedElement = null;
 
 function logEvent(message, element = null, isAdBlocked = false) {
     const timestamp = new Date().toLocaleTimeString();
-    let logMessage = `[${timestamp}] ${message}`;
+    let logMessage = STRINGS.REMOVER.LOG_MESSAGE(timestamp, message);
     if (element) {
         const tag = element.tagName;
         const id = element.id ? `#${element.id}` : '';
         const classes = element.className ? `.${element.className.split(' ').join('.')}` : '';
-        logMessage += ` | Element: ${tag}${id}${classes}`;
+        logMessage += STRINGS.REMOVER.LOG_ELEMENT_DETAILS(tag, id, classes);
     }
-    console.log(`[WP Ad Inspector] ${logMessage}`, element || '');
+    console.log(STRINGS.REMOVER.LOG_PREFIX(logMessage), element || '');
     chrome.storage.local.get(['inspector_logs'], (result) => {
         const logs = result.inspector_logs || [];
         logs.push(logMessage);
@@ -26,7 +25,7 @@ function logEvent(message, element = null, isAdBlocked = false) {
 
     if (isAdBlocked) {
         chrome.runtime.sendMessage({ type: "AD_BLOCKED" }).catch(error => {
-            console.error("Błąd podczas wysyłania wiadomosci AD_BLOCKED:", error);
+            console.error(STRINGS.REMOVER.AD_BLOCKED_MESSAGE_ERROR, error);
         });
     }
 }
@@ -64,15 +63,15 @@ function generateSelector(el) {
 
 async function saveNewCustomRule(selector) {
     if (!selector) return;
-    logEvent(`Picker: Saving rule for selector: ${selector}`);
+    logEvent(STRINGS.REMOVER.PICKER_SAVING_RULE(selector));
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
     if (!customRules.includes(selector)) {
         customRules.push(selector);
         await chrome.storage.local.set({ [CUSTOM_RULES_KEY]: customRules });
-        logEvent(`Picker: New rule saved. Total custom rules: ${customRules.length}`);
+        logEvent(STRINGS.REMOVER.PICKER_RULE_SAVED(customRules.length));
     } else {
-        logEvent(`Picker: Rule already exists. No action taken.`);
+        logEvent(STRINGS.REMOVER.PICKER_RULE_EXISTS);
     }
 }
 
@@ -88,20 +87,20 @@ function handleElementSelection(e) {
     try {
         const root = trueTarget.getRootNode();
         if (root instanceof ShadowRoot) {
-            logEvent("Picker: Shadow DOM detected. Targeting host element.", root.host);
+            logEvent(STRINGS.REMOVER.PICKER_SHADOW_DOM_DETECTED, root.host);
             elementToRemove = root.host;
         }
         selector = generateSelector(elementToRemove);
     } catch (err) {
-        logEvent(`!!! Picker Error: Failed during element analysis. Fallback to removing true target. Error: ${err.message}`);
+        logEvent(STRINGS.REMOVER.PICKER_ERROR(err.message));
         elementToRemove = trueTarget;
     }
 
     if (elementToRemove && elementToRemove.remove) {
         elementToRemove.remove();
-        logEvent("Picker: Element removed successfully.", elementToRemove);
+        logEvent(STRINGS.REMOVER.PICKER_ELEMENT_REMOVED, elementToRemove);
     } else {
-        logEvent("Picker: FAILED to remove element.", elementToRemove);
+        logEvent(STRINGS.REMOVER.PICKER_ELEMENT_REMOVE_FAILED, elementToRemove);
     }
 
     deactivatePicker();
@@ -125,7 +124,7 @@ function handleMouseOver(e) {
 function activatePicker() {
     if (isPickerActive) return;
     isPickerActive = true;
-    logEvent("Picker: Activated.");
+    logEvent(STRINGS.REMOVER.PICKER_ACTIVATED);
     document.addEventListener('mouseover', handleMouseOver, true);
     document.addEventListener('mousedown', handleElementSelection, true);
     document.addEventListener('click', handleElementSelection, true);
@@ -142,7 +141,7 @@ function deactivatePicker() {
     document.removeEventListener('mouseover', handleMouseOver, true);
     document.removeEventListener('mousedown', handleElementSelection, true);
     document.removeEventListener('click', handleElementSelection, true);
-    logEvent("Picker: Deactivated.");
+    logEvent(STRINGS.REMOVER.PICKER_DEACTIVATED);
 }
 
 async function applyCustomRules() {
@@ -165,7 +164,7 @@ async function applyCustomRules() {
                 }
             });
         } catch (e) {
-            logEvent(`CustomRule Error: Invalid selector '${selector}'.`);
+            logEvent(STRINGS.REMOVER.CUSTOM_RULE_ERROR(selector));
         }
     }
 }
@@ -180,7 +179,7 @@ function hidePrimaryAds() {
     document.querySelectorAll(primaryAdSelectors.join(',')).forEach(element => {
         const target = element.closest('div, ins, iframe');
         if (target && target.parentElement && target.style.display !== 'none') {
-            logEvent("PrimaryDetection: Hiding generic ad element.", target, true);
+            logEvent(STRINGS.REMOVER.PRIMARY_AD_HIDDEN, target, true);
             target.style.setProperty('display', 'none', 'important');
         }
     });
@@ -209,11 +208,11 @@ function hideFallbackAds() {
             const textContent = container.textContent.toLowerCase();
             const hasAdKeywords = AD_KEYWORDS.some(keyword => textContent.includes(keyword.toLowerCase()));
             if (hasAdKeywords) {
-                logEvent(`HunterGuard: Hiding container with ad keywords despite content tags.`, container, true);
+                logEvent(STRINGS.REMOVER.FALLBACK_HUNTER_GUARD_HIDDEN, container, true);
                 container.style.setProperty('display', 'none', 'important');
             }
         } else {
-            logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container, true);
+            logEvent(STRINGS.REMOVER.FALLBACK_HUNTER_HIDDEN, container, true);
             container.style.setProperty('display', 'none', 'important');
         }
     });
@@ -234,7 +233,7 @@ function applySafetyNet() {
         const element = document.querySelector(selector);
         if (element && getComputedStyle(element).display === 'none') {
             element.style.setProperty('display', 'block', 'important');
-            logEvent(`!!! SafetyNet TRIGGERED: Critical element '${selector}' was hidden, visibility restored.`);
+            logEvent(STRINGS.REMOVER.SAFETY_NET_TRIGGERED(selector));
         }
     });
 }
@@ -243,7 +242,7 @@ async function runAllRoutines() {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true, [WHITELIST_KEY]: [] });
     if (!result[BLOCKING_STATE_KEY]) {
         if (!window.blockingDisabledLogged) {
-            logEvent("Controller: Blocking is disabled by user. Skipping all routines.");
+            logEvent(STRINGS.REMOVER.CONTROLLER_BLOCKING_DISABLED);
             window.blockingDisabledLogged = true;
         }
         return; 
@@ -252,7 +251,7 @@ async function runAllRoutines() {
     const currentHostname = window.location.hostname;
     if (whitelistedDomains.includes(currentHostname)) {
         if (!window.whitelistMessageLogged) { 
-            logEvent(`Controller: Domain '${currentHostname}' is on the whitelist. Skipping all routines.`);
+            logEvent(STRINGS.REMOVER.CONTROLLER_DOMAIN_WHITELISTED(currentHostname));
             window.whitelistMessageLogged = true;
         }
         return; 
@@ -273,7 +272,7 @@ async function runAllRoutines() {
 
 setTimeout(async () => {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
-    logEvent(`Init: Script v27.0 (Shadow of the PIPIS) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
+    logEvent(STRINGS.REMOVER.INIT_STATUS(result[BLOCKING_STATE_KEY]));
     await runAllRoutines();
 }, 500);
 
@@ -282,9 +281,9 @@ setInterval(runAllRoutines, 1500);
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "ACTIVATE_PICKER") {
         activatePicker();
-        sendResponse({ status: "Pipis tryb aktywny, spróbuj nie rozpierdolić strony" });
+        sendResponse({ status: STRINGS.REMOVER.RESPONSE_PICKER_ACTIVATED });
         return true;
     }
 });
 
-logEvent("Init: Safe polling mechanism for all routines is now active.");
+logEvent(STRINGS.REMOVER.INIT_SAFE_POLLING);

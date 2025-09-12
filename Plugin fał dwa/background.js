@@ -1,5 +1,5 @@
-// background.js - v7.2 
-console.log("WP Ad Remover (v7.2 Pro) - URUCHAMIAM TRYB CICHY.");
+console.log(STRINGS.BACKGROUND.INIT);
+
 function setupNetRules() {
     const LONG_URL_RULE_ID = 1001; 
     const longUrlRule = {
@@ -23,13 +23,14 @@ function setupNetRules() {
             addRules: [longUrlRule]         
         }, () => {
             if (chrome.runtime.lastError) {
-                console.error("Błąc podczas ustawiania reguł sieciowych:", chrome.runtime.lastError);
+                console.error(STRINGS.BACKGROUND.RULES_SETUP_ERROR, chrome.runtime.lastError);
             } else {
-                console.log("Reguły sieciowe zostały ustawione. Reguła blokowania długich URL jest aktywna.");
+                console.log(STRINGS.BACKGROUND.RULES_SETUP_SUCCESS);
             }
         });
     });
 }
+
 const ICON_PATHS = {
     ENABLED: {
         "16": "icons/icon16_active.png",
@@ -42,16 +43,19 @@ const ICON_PATHS = {
         "128": "icons/icon128_inactive.png"
     }
 };
+
 function updateExtensionIcon(isEnabled) {
     const path = isEnabled ? ICON_PATHS.ENABLED : ICON_PATHS.DISABLED;
     chrome.action.setIcon({ path: path });
 }
+
 async function updateBadgeText() {
     const result = await chrome.storage.local.get('blockedAdsCount');
     const count = result.blockedAdsCount || 0;
     chrome.action.setBadgeBackgroundColor({ color: [255, 0, 0, 255] });
     chrome.action.setBadgeText({ text: count > 0 ? count.toString() : '' });
 }
+
 chrome.runtime.onInstalled.addListener(() => {
     setupNetRules(); 
     chrome.storage.local.get({ isBlockingEnabled: true }, (result) => {
@@ -59,6 +63,7 @@ chrome.runtime.onInstalled.addListener(() => {
         updateBadgeText();
     });
 });
+
 chrome.runtime.onStartup.addListener(() => {
     setupNetRules(); 
     chrome.storage.local.get({ isBlockingEnabled: true }, (result) => {
@@ -66,10 +71,11 @@ chrome.runtime.onStartup.addListener(() => {
         updateBadgeText();
     });
 });
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "UPDATE_BLOCKING_STATE") {
         updateExtensionIcon(message.isEnabled);
-        sendResponse({ status: "Ikona zaktualizowana" });
+        sendResponse({ status: STRINGS.BACKGROUND.RESPONSE_ICON_UPDATED });
     } else if (message.type === "AD_BLOCKED") {
         chrome.storage.local.get('blockedAdsCount', (result) => {
             const currentCount = result.blockedAdsCount || 0;
@@ -78,11 +84,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 updateBadgeText();
             });
         });
-        sendResponse({ status: "Licznik reklam zaktualizowany" });
+        sendResponse({ status: STRINGS.BACKGROUND.RESPONSE_AD_COUNTER_UPDATED });
     } else if (message.type === "RESET_AD_COUNT") {
         chrome.storage.local.set({ blockedAdsCount: 0 }, () => {
             updateBadgeText();
-            sendResponse({ status: "Licznik reklam zresetowany" });
+            sendResponse({ status: STRINGS.BACKGROUND.RESPONSE_AD_COUNTER_RESET });
         });
     }
     return true;

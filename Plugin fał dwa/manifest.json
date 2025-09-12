@@ -12,21 +12,21 @@
     "*://*/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "service-worker-loader.js"
   },
   "content_scripts": [
     {
       "matches": [
         "<all_urls>"
       ],
-      "js": ["remover.js"],
+      "js": ["strings.js", "remover.js"],
       "run_at": "document_idle"
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_icon": { 
-      "16": "icons/icon16_active.png",   
+    "default_icon": {
+      "16": "icons/icon16_active.png",
       "48": "icons/icon48_active.png",
       "128": "icons/icon128_active.png"
     }
