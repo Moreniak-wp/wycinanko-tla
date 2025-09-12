@@ -13,6 +13,7 @@ background: radial-gradient(circle, rgba(131, 34, 195, 1) 0%, rgba(193, 12, 247,
         button#toggleWhitelist.whitelisted { background-color: #006400; border-color: #32cd32; color: white; }
         button#toggleWhitelist.not-whitelisted { background-color: #c70000; border-color: #ff4d4d; color: white; }
         hr { border: 1px solid blueviolet; margin: 15px 0; }
+        #settings-view { display: none; }
         #statusMessage {
             min-height: 18px; 
             font-weight: bold;
@@ -26,16 +27,26 @@ background: radial-gradient(circle, rgba(131, 34, 195, 1) 0%, rgba(193, 12, 247,
 </head>
 <body>
     <h3>WP Ad Remover Pro Ultra Max</h3>
+
+    <div id="main-view">
+        <button id="toggleBlocking">Ładuje sie kurde ten</button>
+        <button id="toggleWhitelist">Białalista</button>
+        <hr>
+        <button id="showSettings">Ciemna strona księżyca </button>
+    </div>
+
+    <div id="settings-view">
+        <button id="pickElement">AtaKPiPiS</button>
+        <button id="resetCustomRules">Odsuń Pipisa od rządu</button> 
+        <hr>
+        <button id="resetCount">Atak kamikadze na licznik reklam</button>
+        <button id="downloadLogs">Wykradnij dane żądowe</button>
+        <button id="clearLogs">Zajeb Logi</button>
+        <hr>
+        <button id="showMain">Powrót</button>
+    </div>
     
-    <button id="toggleBlocking">Ładuje sie kurde ten</button>
-    <button id="pickElement">AtaKPiPiS</button>
-    <button id="toggleWhitelist">Białalista</button>
-    <hr>
-    <button id="resetCount">Atak kamikadze na licznik reklam</button>
-    <button id="resetCustomRules">Odsuń Pipisa od rządu</button> 
-    <button id="downloadLogs">Wykradnij dane żądowe</button>
-    <button id="clearLogs">Zajeb Logi</button>
-     <div id="statusMessage"></div>
+    <div id="statusMessage"></div>
     
     <script src="popup.js"></script>
 </body>

@@ -1,4 +1,4 @@
-// popup.js v7.5 - Białolist
+// popup.js v7.5 - UI czengys 
 document.addEventListener('DOMContentLoaded', () => {
     const toggleButton = document.getElementById('toggleBlocking');
     const downloadButton = document.getElementById('downloadLogs');
@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetCustomRulesButton = document.getElementById('resetCustomRules');
     const toggleWhitelistButton = document.getElementById('toggleWhitelist'); 
     const statusMessage = document.getElementById('statusMessage');
+    const mainView = document.getElementById('main-view');
+    const settingsView = document.getElementById('settings-view');
+    const showSettingsButton = document.getElementById('showSettings');
+    const showMainButton = document.getElementById('showMain');
+
     let statusTimeout;
     
     const BLOCKING_STATE_KEY = 'isBlockingEnabled';
@@ -61,6 +66,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateButtonState(result[BLOCKING_STATE_KEY]);
             });
         }
+    });
+
+    showSettingsButton.addEventListener('click', () => {
+        mainView.style.display = 'none';
+        settingsView.style.display = 'block';
+    });
+
+    showMainButton.addEventListener('click', () => {
+        settingsView.style.display = 'none';
+        mainView.style.display = 'block';
     });
 
     toggleButton.addEventListener('click', () => {
