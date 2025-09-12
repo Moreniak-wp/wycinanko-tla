@@ -1,19 +1,16 @@
-// popup.js v7.3 
-
+// popup.js v7.4 
 document.addEventListener('DOMContentLoaded', () => {
     const toggleButton = document.getElementById('toggleBlocking');
     const downloadButton = document.getElementById('downloadLogs');
-    const clearButton = document.getElementById('clearLogs');
+    const clearButton = 'getElementById'('clearLogs');
     const resetCountButton = document.getElementById('resetCount');
-
     const pickElementButton = document.getElementById('pickElement');
-
+    const resetCustomRulesButton = document.getElementById('resetCustomRules');
     const statusMessage = document.getElementById('statusMessage');
     let statusTimeout; 
-
     const BLOCKING_STATE_KEY = 'isBlockingEnabled';
-
-        function showStatus(message, duration = 2500) {
+    const CUSTOM_RULES_KEY = 'customBlockedSelectors';
+    function showStatus(message, duration = 2500) {
         clearTimeout(statusTimeout); 
         statusMessage.textContent = message;
         statusMessage.style.opacity = '1';
@@ -22,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
             statusMessage.style.opacity = '0';
         }, duration);
     }
-
     function updateButtonState(isEnabled) {
         if (isEnabled) {
             toggleButton.textContent = 'Zatrzymaj Blokowanie';
@@ -33,27 +29,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         chrome.runtime.sendMessage({ type: "UPDATE_BLOCKING_STATE", isEnabled: isEnabled });
     }
-
     chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
         updateButtonState(result[BLOCKING_STATE_KEY]);
     });
-
     toggleButton.addEventListener('click', () => {
         chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
             const currentState = result[BLOCKING_STATE_KEY];
             const newState = !currentState;
-
             chrome.storage.local.set({ [BLOCKING_STATE_KEY]: newState }, () => {
                 updateButtonState(newState); 
                 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                    if (tabs[0]) {
+                    if (tabs[0] && tabs[0].id) {
                         chrome.tabs.reload(tabs[0].id);
                     }
                 });
             });
         });
     });
-pickElementButton.addEventListener('click', () => {
+    pickElementButton.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0] && tabs[0].id) {
                 chrome.tabs.sendMessage(tabs[0].id, { type: "ACTIVATE_PICKER" }, (response) => {
@@ -62,7 +55,7 @@ pickElementButton.addEventListener('click', () => {
                     } else {
                         console.log(response.status);
                         window.close();
-                         }
+                    }
                 });
             } else {
                  showStatus("Nie znaleziono aktywnej karty.", 3000);
@@ -92,16 +85,26 @@ pickElementButton.addEventListener('click', () => {
             }
         });
     });
-
     clearButton.addEventListener('click', () => {
         chrome.storage.local.remove('inspector_logs', () => {
              showStatus('Logi commited die.');
         });
     });
-
     resetCountButton.addEventListener('click', () => {
         chrome.runtime.sendMessage({ type: "RESET_AD_COUNT" }, (response) => {
              showStatus('Licznik reklam został zresetowany.');
+        });
+    });
+    resetCustomRulesButton.addEventListener('click', () => {
+        chrome.storage.local.remove(CUSTOM_RULES_KEY, () => {
+            showStatus('Reguły pipisa zresetowane');
+            setTimeout(() => {
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    if (tabs[0] && tabs[0].id) {
+                        chrome.tabs.reload(tabs[0].id);
+                    }
+                });
+            }, 1000); 
         });
     });
 });
