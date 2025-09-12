@@ -1,5 +1,5 @@
-// remover.js - v26.6 - "Final pipis"
-console.log("WP Ad Inspector (v26.6) - CONTROLLER - Initialized.");
+// remover.js - v26.7 - Pipiscepcja
+console.log("WP Ad Inspector (v26.7) - CONTROLLER - Initialized.");
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';
@@ -37,8 +37,8 @@ function generateSelector(el) {
         let selector = el.nodeName.toLowerCase();
         if (el.id) {
             try {
-                if (document.querySelector(el.nodeName.toLowerCase() + '#' + el.id) === el) {
-                    selector += '#' + el.id;
+                if (document.querySelector(el.nodeName.toLowerCase() + '#' + CSS.escape(el.id)) === el) {
+                    selector += '#' + CSS.escape(el.id);
                     parts.unshift(selector);
                     break;
                 }
@@ -55,6 +55,7 @@ function generateSelector(el) {
     }
     return parts.join(' > ');
 }
+
 async function saveNewCustomRule(selector) {
     if (!selector) return;
 
@@ -69,17 +70,27 @@ async function saveNewCustomRule(selector) {
         logEvent(`Picker: Rule already exists. No action taken.`);
     }
 }
+
 function handleElementSelection(e) {
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
+
     const target = e.target;
-    const selector = generateSelector(target);
+    let selector = null;
+    try {
+        selector = generateSelector(target);
+    } catch (err) {
+        logEvent(`!!! Picker Error: Failed to generate selector, but still removing element. Error: ${err.message}`);
+    }
+
     if (target) {
         target.remove();
     }
+
     deactivatePicker();
     saveNewCustomRule(selector);
+    
     return false;
 }
 
@@ -108,7 +119,7 @@ function deactivatePicker() {
     if (highlightedElement) {
         try {
             highlightedElement.style.outline = '';
-        } catch (e) { }
+        } catch (e) {  }
     }
     document.removeEventListener('mouseover', handleMouseOver, true);
     document.removeEventListener('mousedown', handleElementSelection, true);
@@ -125,7 +136,6 @@ async function applyCustomRules() {
         try {
             document.querySelectorAll(selector).forEach(element => {
                 if (element.style.display !== 'none') {
-                    logEvent(`CustomRule: Hiding element matching '${selector}'.`, element);
                     element.style.setProperty('display', 'none', 'important');
                 }
             });
@@ -150,7 +160,6 @@ function hidePrimaryAds() {
         }
     });
 }
-
 function hideFallbackAds() {
     const FALLBACK_CDN_HOST = 'v.wpimg.pl';
     const TRACKING_LINK_LENGTH_THRESHOLD = 150;
