@@ -122,6 +122,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case MESSAGE_TYPES.UPDATE_PROXY_SETTINGS:
             applyProxySettings();
             sendResponse({ status: STRINGS.PROXY.RESPONSE_UPDATED });
+            console.log(STRINGS.PROXY.RESPONSE_UPDATED);
             break;
     }
     return true;
