@@ -67,4 +67,5 @@ const STRINGS = {
         CONTROLLER_BLOCKING_DISABLED: "Controller: Blocking is disabled by user. Skipping all routines.",
         CONTROLLER_DOMAIN_WHITELISTED: (hostname) => `Controller: Domain '${hostname}' is on the whitelist. Skipping all routines.`
     }
+  }
 };

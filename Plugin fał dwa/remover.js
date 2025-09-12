@@ -253,7 +253,7 @@ async function runAllRoutines() {
     if (whitelistedDomains.includes(currentHostname)) {
         if (!window.whitelistMessageLogged) { 
             logEvent(`Controller: Domain '${currentHostname}' is on the whitelist. Skipping all routines.`);
-            win dow.whitelistMessageLogged = true;
+            window.whitelistMessageLogged = true;
         }
         return; 
     }
