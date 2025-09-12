@@ -1,3 +1,6 @@
+// Plik: constants.js
+// Centralne miejsce dla wszystkich stałych tekstowych, kluczy i typów wiadomości.
+
 const STRINGS = {
     POPUP: {
         TITLE: "WP Ad Remover",
@@ -19,8 +22,8 @@ const STRINGS = {
         STATUS_PICKER_UNAVAILABLE: "Pipis nie ma tu władzy",
         STATUS_PICKER_NO_TAB: "Aktywna karta machen",
         STATUS_WHITELIST_NO_PERMISSIONS: "Ni ma pozwulynia na edycje stryny",
-        STATUS_WHITELIST_REMOVED: (hostname) => `chcesz reklamy abyśmy usuwali? co my jesteśmy? adblock, a nie czej`,
-        STATUS_WHITELIST_ADDED: (hostname) => `Skoro ładnie poprosiłeś to możemy dla ${hostname} nie blokować reklam`,
+        STATUS_WHITELIST_REMOVED: (hostname) => `Chcesz reklamy abyśmy usuwali? Co my jesteśmy? Adblock, a nie czej.`,
+        STATUS_WHITELIST_ADDED: (hostname) => `Skoro ładnie poprosiłeś, to możemy dla ${hostname} nie blokować reklam`,
         STATUS_LOGS_DOWNLOAD_EMPTY: 'Jak ty chcesz pobrać logi jak ich kurwa nie ma???',
         STATUS_LOGS_CLEARED: 'Mi logi...',
         STATUS_COUNTER_RESET: 'Jesteś z siebie dumny debilu? Tera od nowa muszę liczyć.',
@@ -29,18 +32,19 @@ const STRINGS = {
         LOG_FILE_NAME: (timestamp) => `wp_inspector_logs_${timestamp}.txt`
     },
     BACKGROUND: {
-        INIT: "WP Ad Remover (v7.2 Pro) - URUCHAMIAM TRYB CICHY.",
-        RULES_SETUP_ERROR: "Błąc podczas ustawiania reguł sieciowych:",
+        INIT: "WP Ad Remover (v7.5 Pro) - URUCHAMIAM TRYB CICHY.",
+        RULES_SETUP_ERROR: "Błąd podczas ustawiania reguł sieciowych:",
         RULES_SETUP_SUCCESS: "Reguły sieciowe zostały ustawione. Reguła blokowania długich URL jest aktywna.",
         RESPONSE_ICON_UPDATED: "Ikona zaktualizowana",
         RESPONSE_AD_COUNTER_UPDATED: "Licznik reklam zaktualizowany",
         RESPONSE_AD_COUNTER_RESET: "Licznik reklam zresetowany"
     },
-       PROXY: {
+    PROXY: {
         ENABLED: "[Proxy] Proxy włączone:",
         DISABLED: "[Proxy] Proxy wyłączone. Używane są ustawienia systemowe.",
         SETUP_ERROR: "[Proxy] Błąd podczas konfiguracji proxy:",
-        RESPONSE_UPDATED: "Ustawienia proxy zostały zaktualizowane",
+        RESPONSE_UPDATED: "Ustawienia proxy zostały zaktualizowane"
+    },
     REMOVER: {
         INIT: "WP Ad Inspector (v27.0) - CONTROLLER - Initialized.",
         INIT_SAFE_POLLING: "Init: Safe polling mechanism for all routines is now active.",
@@ -67,5 +71,32 @@ const STRINGS = {
         CONTROLLER_BLOCKING_DISABLED: "Controller: Blocking is disabled by user. Skipping all routines.",
         CONTROLLER_DOMAIN_WHITELISTED: (hostname) => `Controller: Domain '${hostname}' is on the whitelist. Skipping all routines.`
     }
-  }
 };
+
+/**
+ * Klucze używane do zapisu i odczytu danych z chrome.storage.local.
+ * Centralizacja zapobiega literówkom i ułatwia zarządzanie.
+ */
+const STORAGE_KEYS = {
+    IS_BLOCKING_ENABLED: 'isBlockingEnabled',
+    BLOCKED_ADS_COUNT: 'blockedAdsCount',
+    CUSTOM_RULES_KEY: 'customBlockedSelectors',
+    WHITELIST_KEY: 'whitelistedDomains',
+    INSPECTOR_LOGS: 'inspector_logs',
+    PROXY_ENABLED: 'proxyEnabled',
+    PROXY_HOST: 'proxyHost',
+    PROXY_PORT: 'proxyPort'
+};
+
+/**
+ * Typy wiadomości przesyłanych między komponentami rozszerzenia (np. background <-> popup).
+ * Używanie stałych zamiast stringów zapewnia spójność i eliminuje błędy.
+ */
+const MESSAGE_TYPES = {
+    UPDATE_BLOCKING_STATE: "UPDATE_BLOCKING_STATE",
+    AD_BLOCKED: "AD_BLOCKED",
+    RESET_AD_COUNT: "RESET_AD_COUNT",
+    UPDATE_PROXY_SETTINGS: "UPDATE_PROXY_SETTINGS",
+    ACTIVATE_PICKER: "ACTIVATE_PICKER"
+};
+
