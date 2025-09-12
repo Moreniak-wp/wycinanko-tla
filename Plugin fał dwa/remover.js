@@ -1,8 +1,9 @@
-// remover.js - v27.0 - "Secret of the fucking PIPIS" 
+// remover.js - v27.0 - "Majster Wajt musisz tą listę podpisać" 
 console.log("WP Ad Inspector (v27.0) - CONTROLLER - Initialized.");
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';
+const WHITELIST_KEY = 'whitelistedDomains';
 
 let isPickerActive = false;
 let highlightedElement = null;
@@ -239,14 +240,27 @@ function applySafetyNet() {
 }
 
 async function runAllRoutines() {
-    const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
+    const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true, [WHITELIST_KEY]: [] });
     if (!result[BLOCKING_STATE_KEY]) {
         if (!window.blockingDisabledLogged) {
             logEvent("Controller: Blocking is disabled by user. Skipping all routines.");
             window.blockingDisabledLogged = true;
         }
-        return;
+        return; 
     }
+    const whitelistedDomains = result[WHITELIST_KEY];
+    const currentHostname = window.location.hostname;
+    if (whitelistedDomains.includes(currentHostname)) {
+        if (!window.whitelistMessageLogged) { 
+            logEvent(`Controller: Domain '${currentHostname}' is on the whitelist. Skipping all routines.`);
+            window.whitelistMessageLogged = true;
+        }
+        return; 
+    }
+    if(window.whitelistMessageLogged) {
+         window.whitelistMessageLogged = false;
+    }
+
     if (window.blockingDisabledLogged) {
         window.blockingDisabledLogged = false;
     }

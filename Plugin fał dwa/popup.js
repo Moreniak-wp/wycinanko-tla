@@ -1,4 +1,4 @@
-// popup.js v7.4 
+// popup.js v7.5 - Białolist
 document.addEventListener('DOMContentLoaded', () => {
     const toggleButton = document.getElementById('toggleBlocking');
     const downloadButton = document.getElementById('downloadLogs');
@@ -6,12 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetCountButton = document.getElementById('resetCount');
     const pickElementButton = document.getElementById('pickElement');
     const resetCustomRulesButton = document.getElementById('resetCustomRules');
+    const toggleWhitelistButton = document.getElementById('toggleWhitelist'); 
     const statusMessage = document.getElementById('statusMessage');
-    let statusTimeout; 
+    let statusTimeout;
+    
     const BLOCKING_STATE_KEY = 'isBlockingEnabled';
     const CUSTOM_RULES_KEY = 'customBlockedSelectors';
+    const WHITELIST_KEY = 'whitelistedDomains'; 
+
     function showStatus(message, duration = 2500) {
-        clearTimeout(statusTimeout); 
+        clearTimeout(statusTimeout);
         statusMessage.textContent = message;
         statusMessage.style.opacity = '1';
 
@@ -19,25 +23,52 @@ document.addEventListener('DOMContentLoaded', () => {
             statusMessage.style.opacity = '0';
         }, duration);
     }
+
     function updateButtonState(isEnabled) {
         if (isEnabled) {
-            toggleButton.textContent = 'Zatrzymaj Blokowanie';
+            toggleButton.textContent = 'Przyzwij TrUSKa';
             toggleButton.className = 'enabled';
         } else {
-            toggleButton.textContent = 'Uruchom Blokowanie';
+            toggleButton.textContent = 'Obudź Papaja';
             toggleButton.className = 'disabled';
         }
         chrome.runtime.sendMessage({ type: "UPDATE_BLOCKING_STATE", isEnabled: isEnabled });
     }
-    chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
-        updateButtonState(result[BLOCKING_STATE_KEY]);
+    
+    function updateWhitelistButton(hostname, whitelistedDomains) {
+        if (whitelistedDomains.includes(hostname)) {
+            toggleWhitelistButton.textContent = 'Włącz blokowanie';
+            toggleWhitelistButton.className = 'whitelisted';
+        } else {
+            toggleWhitelistButton.textContent = 'Wyłącz blokowanie';
+            toggleWhitelistButton.className = 'not-whitelisted';
+        }
+    }
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const currentTab = tabs[0];
+        if (currentTab && currentTab.url && currentTab.url.startsWith('http')) {
+            const url = new URL(currentTab.url);
+            const currentHostname = url.hostname;
+
+            chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true, [WHITELIST_KEY]: [] }, (result) => {
+                updateButtonState(result[BLOCKING_STATE_KEY]);
+                updateWhitelistButton(currentHostname, result[WHITELIST_KEY]);
+            });
+        } else {
+            toggleWhitelistButton.disabled = true;
+            toggleWhitelistButton.textContent = 'Tutaj to chuja a nie coś zrobię';
+            chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
+                updateButtonState(result[BLOCKING_STATE_KEY]);
+            });
+        }
     });
+
     toggleButton.addEventListener('click', () => {
         chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
             const currentState = result[BLOCKING_STATE_KEY];
             const newState = !currentState;
             chrome.storage.local.set({ [BLOCKING_STATE_KEY]: newState }, () => {
-                updateButtonState(newState); 
+                updateButtonState(newState);
                 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                     if (tabs[0] && tabs[0].id) {
                         chrome.tabs.reload(tabs[0].id);
@@ -46,22 +77,58 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+
     pickElementButton.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0] && tabs[0].id) {
                 chrome.tabs.sendMessage(tabs[0].id, { type: "ACTIVATE_PICKER" }, (response) => {
                     if (chrome.runtime.lastError) {
-                        showStatus("Pipeta jest niedostępna na tej stronie.", 3500);
+                        showStatus("Pipis nie ma tu władzy", 3500);
                     } else {
                         console.log(response.status);
                         window.close();
                     }
                 });
             } else {
-                 showStatus("Nie znaleziono aktywnej karty.", 3000);
+                 showStatus("Aktywna karta machen", 3000);
             }
         });
     });
+    toggleWhitelistButton.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const currentTab = tabs[0];
+            if (!currentTab || !currentTab.url || !currentTab.url.startsWith('http')) {
+                showStatus("Ni ma pozwulynia na edycje stryny", 3000);
+                return;
+            }
+
+            const url = new URL(currentTab.url);
+            const currentHostname = url.hostname;
+
+            chrome.storage.local.get({ [WHITELIST_KEY]: [] }, (result) => {
+                let whitelistedDomains = result[WHITELIST_KEY];
+                const isWhitelisted = whitelistedDomains.includes(currentHostname);
+
+                if (isWhitelisted) {
+                    whitelistedDomains = whitelistedDomains.filter(domain => domain !== currentHostname);
+                    showStatus(`chcesz reklamy abyśmy usuwali? co my jesteśmy? adblock, a nie czej. na ${currentHostname} reklamy będą blokowane`);
+                } else {
+                    whitelistedDomains.push(currentHostname);
+                    showStatus(`Skoro ładnie poprosiłeś to możemy dla ${currentHostname} nie blokować reklam`);
+                }
+                
+                chrome.storage.local.set({ [WHITELIST_KEY]: whitelistedDomains }, () => {
+                    updateWhitelistButton(currentHostname, whitelistedDomains);
+                    setTimeout(() => {
+                        if (currentTab && currentTab.id) {
+                            chrome.tabs.reload(currentTab.id);
+                        }
+                    }, 500);
+                });
+            });
+        });
+    });
+
     downloadButton.addEventListener('click', () => {
         chrome.storage.local.get(['inspector_logs'], (result) => {
             if (result.inspector_logs && result.inspector_logs.length > 0) {
@@ -81,23 +148,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             } else {
-                showStatus('Brak logów do pobrania.');
+                showStatus('Jak ty chcesz pobrać logi jak ich kurwa nie ma???');
             }
         });
     });
+
     clearButton.addEventListener('click', () => {
         chrome.storage.local.remove('inspector_logs', () => {
-             showStatus('Logi commited die.');
+             showStatus('Mi logi...');
         });
     });
+
     resetCountButton.addEventListener('click', () => {
         chrome.runtime.sendMessage({ type: "RESET_AD_COUNT" }, (response) => {
-             showStatus('Licznik reklam został zresetowany.');
+             showStatus('Jesteś z siebie dumny debilu? Tera od nowa muszę liczyć.');
         });
     });
+
     resetCustomRulesButton.addEventListener('click', () => {
         chrome.storage.local.remove(CUSTOM_RULES_KEY, () => {
-            showStatus('Reguły pipisa zresetowane');
+            showStatus('Pipis chwilowo odsuniety od rządu.');
             setTimeout(() => {
                 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                     if (tabs[0] && tabs[0].id) {
