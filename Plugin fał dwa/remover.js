@@ -1,30 +1,36 @@
-console.log(STRINGS.REMOVER.INIT);
+// remover.js - v27.0 - "Majster Wajt musisz tą listę podpisać" 
+console.log("WP Ad Inspector (v27.0) - CONTROLLER - Initialized.");
+
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';
 const WHITELIST_KEY = 'whitelistedDomains';
+
 let isPickerActive = false;
 let highlightedElement = null;
+
 function logEvent(message, element = null, isAdBlocked = false) {
     const timestamp = new Date().toLocaleTimeString();
-    let logMessage = STRINGS.REMOVER.LOG_MESSAGE(timestamp, message);
+    let logMessage = `[${timestamp}] ${message}`;
     if (element) {
         const tag = element.tagName;
         const id = element.id ? `#${element.id}` : '';
         const classes = element.className ? `.${element.className.split(' ').join('.')}` : '';
-        logMessage += STRINGS.REMOVER.LOG_ELEMENT_DETAILS(tag, id, classes);
+        logMessage += ` | Element: ${tag}${id}${classes}`;
     }
-    console.log(STRINGS.REMOVER.LOG_PREFIX(logMessage), element || '');
+    console.log(`[WP Ad Inspector] ${logMessage}`, element || '');
     chrome.storage.local.get(['inspector_logs'], (result) => {
         const logs = result.inspector_logs || [];
         logs.push(logMessage);
         chrome.storage.local.set({ 'inspector_logs': logs });
     });
+
     if (isAdBlocked) {
         chrome.runtime.sendMessage({ type: "AD_BLOCKED" }).catch(error => {
-            console.error(STRINGS.REMOVER.AD_BLOCKED_MESSAGE_ERROR, error);
+            console.error("Błąd podczas wysyłania wiadomosci AD_BLOCKED:", error);
         });
     }
 }
+
 function generateSelector(el) {
     if (!(el instanceof Element)) return null;
     const root = el.getRootNode();
@@ -32,6 +38,7 @@ function generateSelector(el) {
         if (el.id) return `#${CSS.escape(el.id)}`;
         return `${el.tagName.toLowerCase()}`;
     }
+
     const parts = [];
     while (el && el.nodeType === Node.ELEMENT_NODE) {
         let selector = el.nodeName.toLowerCase();
@@ -54,47 +61,54 @@ function generateSelector(el) {
     }
     return parts.join(' > ');
 }
+
 async function saveNewCustomRule(selector) {
     if (!selector) return;
-    logEvent(STRINGS.REMOVER.PICKER_SAVING_RULE(selector));
+    logEvent(`Picker: Saving rule for selector: ${selector}`);
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
     if (!customRules.includes(selector)) {
         customRules.push(selector);
         await chrome.storage.local.set({ [CUSTOM_RULES_KEY]: customRules });
-        logEvent(STRINGS.REMOVER.PICKER_RULE_SAVED(customRules.length));
+        logEvent(`Picker: New rule saved. Total custom rules: ${customRules.length}`);
     } else {
-        logEvent(STRINGS.REMOVER.PICKER_RULE_EXISTS);
+        logEvent(`Picker: Rule already exists. No action taken.`);
     }
 }
+
 function handleElementSelection(e) {
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
+
     const trueTarget = e.composedPath && e.composedPath()[0] || e.target;
     let elementToRemove = trueTarget;
     let selector = null;
+
     try {
         const root = trueTarget.getRootNode();
         if (root instanceof ShadowRoot) {
-            logEvent(STRINGS.REMOVER.PICKER_SHADOW_DOM_DETECTED, root.host);
+            logEvent("Picker: Shadow DOM detected. Targeting host element.", root.host);
             elementToRemove = root.host;
         }
         selector = generateSelector(elementToRemove);
     } catch (err) {
-        logEvent(STRINGS.REMOVER.PICKER_ERROR(err.message));
+        logEvent(`!!! Picker Error: Failed during element analysis. Fallback to removing true target. Error: ${err.message}`);
         elementToRemove = trueTarget;
     }
+
     if (elementToRemove && elementToRemove.remove) {
         elementToRemove.remove();
-        logEvent(STRINGS.REMOVER.PICKER_ELEMENT_REMOVED, elementToRemove);
+        logEvent("Picker: Element removed successfully.", elementToRemove);
     } else {
-        logEvent(STRINGS.REMOVER.PICKER_ELEMENT_REMOVE_FAILED, elementToRemove);
+        logEvent("Picker: FAILED to remove element.", elementToRemove);
     }
+
     deactivatePicker();
     saveNewCustomRule(selector);
     return false;
 }
+
 function handleMouseOver(e) {
     const trueTarget = e.composedPath && e.composedPath()[0] || e.target;
     if (highlightedElement === trueTarget) return;
@@ -107,14 +121,16 @@ function handleMouseOver(e) {
     highlightedElement = trueTarget;
     highlightedElement.style.outline = '3px dashed #FF00FF';
 }
+
 function activatePicker() {
     if (isPickerActive) return;
     isPickerActive = true;
-    logEvent(STRINGS.REMOVER.PICKER_ACTIVATED);
+    logEvent("Picker: Activated.");
     document.addEventListener('mouseover', handleMouseOver, true);
     document.addEventListener('mousedown', handleElementSelection, true);
     document.addEventListener('click', handleElementSelection, true);
 }
+
 function deactivatePicker() {
     if (!isPickerActive) return;
     isPickerActive = false;
@@ -126,8 +142,9 @@ function deactivatePicker() {
     document.removeEventListener('mouseover', handleMouseOver, true);
     document.removeEventListener('mousedown', handleElementSelection, true);
     document.removeEventListener('click', handleElementSelection, true);
-    logEvent(STRINGS.REMOVER.PICKER_DEACTIVATED);
+    logEvent("Picker: Deactivated.");
 }
+
 async function applyCustomRules() {
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
@@ -148,10 +165,11 @@ async function applyCustomRules() {
                 }
             });
         } catch (e) {
-            logEvent(STRINGS.REMOVER.CUSTOM_RULE_ERROR(selector));
+            logEvent(`CustomRule Error: Invalid selector '${selector}'.`);
         }
     }
 }
+
 function hidePrimaryAds() {
     const primaryAdSelectors = [
         '[id^="google_ads_iframe_"]', '[id^="div-gpt-ad-"]', '.adsbygoogle',
@@ -162,11 +180,12 @@ function hidePrimaryAds() {
     document.querySelectorAll(primaryAdSelectors.join(',')).forEach(element => {
         const target = element.closest('div, ins, iframe');
         if (target && target.parentElement && target.style.display !== 'none') {
-            logEvent(STRINGS.REMOVER.PRIMARY_AD_HIDDEN, target, true);
+            logEvent("PrimaryDetection: Hiding generic ad element.", target, true);
             target.style.setProperty('display', 'none', 'important');
         }
     });
 }
+
 function hideFallbackAds() {
     const FALLBACK_CDN_HOST = 'v.wpimg.pl';
     const TRACKING_LINK_LENGTH_THRESHOLD = 150;
@@ -190,15 +209,16 @@ function hideFallbackAds() {
             const textContent = container.textContent.toLowerCase();
             const hasAdKeywords = AD_KEYWORDS.some(keyword => textContent.includes(keyword.toLowerCase()));
             if (hasAdKeywords) {
-                logEvent(STRINGS.REMOVER.FALLBACK_HUNTER_GUARD_HIDDEN, container, true);
+                logEvent(`HunterGuard: Hiding container with ad keywords despite content tags.`, container, true);
                 container.style.setProperty('display', 'none', 'important');
             }
         } else {
-            logEvent(STRINGS.REMOVER.FALLBACK_HUNTER_HIDDEN, container, true);
+            logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container, true);
             container.style.setProperty('display', 'none', 'important');
         }
     });
 }
+
 function hidePlaceholders() {
     const placeholderSelector = '.wp-section-placeholder-container';
     document.querySelectorAll(placeholderSelector).forEach(element => {
@@ -207,21 +227,23 @@ function hidePlaceholders() {
         }
     });
 }
+
 function applySafetyNet() {
     const CRITICAL_SELECTORS = ['body', '#wp-site-main', 'main', '#page', '#app', '#root'];
     CRITICAL_SELECTORS.forEach(selector => {
         const element = document.querySelector(selector);
         if (element && getComputedStyle(element).display === 'none') {
             element.style.setProperty('display', 'block', 'important');
-            logEvent(STRINGS.REMOVER.SAFETY_NET_TRIGGERED(selector));
+            logEvent(`!!! SafetyNet TRIGGERED: Critical element '${selector}' was hidden, visibility restored.`);
         }
     });
 }
+
 async function runAllRoutines() {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true, [WHITELIST_KEY]: [] });
     if (!result[BLOCKING_STATE_KEY]) {
         if (!window.blockingDisabledLogged) {
-            logEvent(STRINGS.REMOVER.CONTROLLER_BLOCKING_DISABLED);
+            logEvent("Controller: Blocking is disabled by user. Skipping all routines.");
             window.blockingDisabledLogged = true;
         }
         return; 
@@ -230,14 +252,15 @@ async function runAllRoutines() {
     const currentHostname = window.location.hostname;
     if (whitelistedDomains.includes(currentHostname)) {
         if (!window.whitelistMessageLogged) { 
-            logEvent(STRINGS.REMOVER.CONTROLLER_DOMAIN_WHITELISTED(currentHostname));
-            window.whitelistMessageLogged = true;
+            logEvent(`Controller: Domain '${currentHostname}' is on the whitelist. Skipping all routines.`);
+            win dow.whitelistMessageLogged = true;
         }
         return; 
     }
     if(window.whitelistMessageLogged) {
          window.whitelistMessageLogged = false;
     }
+
     if (window.blockingDisabledLogged) {
         window.blockingDisabledLogged = false;
     }
@@ -247,17 +270,21 @@ async function runAllRoutines() {
     hidePlaceholders();
     applySafetyNet();
 }
+
 setTimeout(async () => {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
-    logEvent(STRINGS.REMOVER.INIT_STATUS(result[BLOCKING_STATE_KEY]));
+    logEvent(`Init: Script v27.0 (Shadow of the PIPIS) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
     await runAllRoutines();
 }, 500);
+
 setInterval(runAllRoutines, 1500);
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "ACTIVATE_PICKER") {
         activatePicker();
-        sendResponse({ status: STRINGS.REMOVER.RESPONSE_PICKER_ACTIVATED });
+        sendResponse({ status: "Pipis tryb aktywny, spróbuj nie rozpierdolić strony" });
         return true;
     }
 });
-logEvent(STRINGS.REMOVER.INIT_SAFE_POLLING);
+
+logEvent("Init: Safe polling mechanism for all routines is now active.");
