@@ -1,12 +1,9 @@
 console.log(STRINGS.REMOVER.INIT);
-
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';
 const WHITELIST_KEY = 'whitelistedDomains';
-
 let isPickerActive = false;
 let highlightedElement = null;
-
 function logEvent(message, element = null, isAdBlocked = false) {
     const timestamp = new Date().toLocaleTimeString();
     let logMessage = STRINGS.REMOVER.LOG_MESSAGE(timestamp, message);
@@ -22,14 +19,12 @@ function logEvent(message, element = null, isAdBlocked = false) {
         logs.push(logMessage);
         chrome.storage.local.set({ 'inspector_logs': logs });
     });
-
     if (isAdBlocked) {
         chrome.runtime.sendMessage({ type: "AD_BLOCKED" }).catch(error => {
             console.error(STRINGS.REMOVER.AD_BLOCKED_MESSAGE_ERROR, error);
         });
     }
 }
-
 function generateSelector(el) {
     if (!(el instanceof Element)) return null;
     const root = el.getRootNode();
@@ -37,7 +32,6 @@ function generateSelector(el) {
         if (el.id) return `#${CSS.escape(el.id)}`;
         return `${el.tagName.toLowerCase()}`;
     }
-
     const parts = [];
     while (el && el.nodeType === Node.ELEMENT_NODE) {
         let selector = el.nodeName.toLowerCase();
@@ -60,7 +54,6 @@ function generateSelector(el) {
     }
     return parts.join(' > ');
 }
-
 async function saveNewCustomRule(selector) {
     if (!selector) return;
     logEvent(STRINGS.REMOVER.PICKER_SAVING_RULE(selector));
@@ -74,16 +67,13 @@ async function saveNewCustomRule(selector) {
         logEvent(STRINGS.REMOVER.PICKER_RULE_EXISTS);
     }
 }
-
 function handleElementSelection(e) {
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
-
     const trueTarget = e.composedPath && e.composedPath()[0] || e.target;
     let elementToRemove = trueTarget;
     let selector = null;
-
     try {
         const root = trueTarget.getRootNode();
         if (root instanceof ShadowRoot) {
@@ -95,19 +85,16 @@ function handleElementSelection(e) {
         logEvent(STRINGS.REMOVER.PICKER_ERROR(err.message));
         elementToRemove = trueTarget;
     }
-
     if (elementToRemove && elementToRemove.remove) {
         elementToRemove.remove();
         logEvent(STRINGS.REMOVER.PICKER_ELEMENT_REMOVED, elementToRemove);
     } else {
         logEvent(STRINGS.REMOVER.PICKER_ELEMENT_REMOVE_FAILED, elementToRemove);
     }
-
     deactivatePicker();
     saveNewCustomRule(selector);
     return false;
 }
-
 function handleMouseOver(e) {
     const trueTarget = e.composedPath && e.composedPath()[0] || e.target;
     if (highlightedElement === trueTarget) return;
@@ -120,7 +107,6 @@ function handleMouseOver(e) {
     highlightedElement = trueTarget;
     highlightedElement.style.outline = '3px dashed #FF00FF';
 }
-
 function activatePicker() {
     if (isPickerActive) return;
     isPickerActive = true;
@@ -129,7 +115,6 @@ function activatePicker() {
     document.addEventListener('mousedown', handleElementSelection, true);
     document.addEventListener('click', handleElementSelection, true);
 }
-
 function deactivatePicker() {
     if (!isPickerActive) return;
     isPickerActive = false;
@@ -143,7 +128,6 @@ function deactivatePicker() {
     document.removeEventListener('click', handleElementSelection, true);
     logEvent(STRINGS.REMOVER.PICKER_DEACTIVATED);
 }
-
 async function applyCustomRules() {
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
@@ -168,7 +152,6 @@ async function applyCustomRules() {
         }
     }
 }
-
 function hidePrimaryAds() {
     const primaryAdSelectors = [
         '[id^="google_ads_iframe_"]', '[id^="div-gpt-ad-"]', '.adsbygoogle',
@@ -184,7 +167,6 @@ function hidePrimaryAds() {
         }
     });
 }
-
 function hideFallbackAds() {
     const FALLBACK_CDN_HOST = 'v.wpimg.pl';
     const TRACKING_LINK_LENGTH_THRESHOLD = 150;
@@ -217,7 +199,6 @@ function hideFallbackAds() {
         }
     });
 }
-
 function hidePlaceholders() {
     const placeholderSelector = '.wp-section-placeholder-container';
     document.querySelectorAll(placeholderSelector).forEach(element => {
@@ -226,7 +207,6 @@ function hidePlaceholders() {
         }
     });
 }
-
 function applySafetyNet() {
     const CRITICAL_SELECTORS = ['body', '#wp-site-main', 'main', '#page', '#app', '#root'];
     CRITICAL_SELECTORS.forEach(selector => {
@@ -237,7 +217,6 @@ function applySafetyNet() {
         }
     });
 }
-
 async function runAllRoutines() {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true, [WHITELIST_KEY]: [] });
     if (!result[BLOCKING_STATE_KEY]) {
@@ -259,7 +238,6 @@ async function runAllRoutines() {
     if(window.whitelistMessageLogged) {
          window.whitelistMessageLogged = false;
     }
-
     if (window.blockingDisabledLogged) {
         window.blockingDisabledLogged = false;
     }
@@ -269,15 +247,12 @@ async function runAllRoutines() {
     hidePlaceholders();
     applySafetyNet();
 }
-
 setTimeout(async () => {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
     logEvent(STRINGS.REMOVER.INIT_STATUS(result[BLOCKING_STATE_KEY]));
     await runAllRoutines();
 }, 500);
-
 setInterval(runAllRoutines, 1500);
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "ACTIVATE_PICKER") {
         activatePicker();
@@ -285,5 +260,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 });
-
 logEvent(STRINGS.REMOVER.INIT_SAFE_POLLING);

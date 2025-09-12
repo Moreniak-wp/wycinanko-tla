@@ -12,13 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const showSettingsButton = document.getElementById('showSettings');
     const showMainButton = document.getElementById('showMain');
     const headerTitle = document.getElementById('headerTitle');
-
     let statusTimeout;
-    
     const BLOCKING_STATE_KEY = 'isBlockingEnabled';
     const CUSTOM_RULES_KEY = 'customBlockedSelectors';
     const WHITELIST_KEY = 'whitelistedDomains';
-
     function initializeUI() {
         document.title = STRINGS.POPUP.TITLE;
         headerTitle.textContent = STRINGS.POPUP.HEADER;
@@ -32,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
         clearButton.textContent = STRINGS.POPUP.SETTINGS_CLEAR_LOGS;
         showMainButton.textContent = STRINGS.POPUP.SETTINGS_BACK;
     }
-
     function showStatus(message, duration = 2500) {
         clearTimeout(statusTimeout);
         statusMessage.textContent = message;
@@ -42,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
             statusMessage.style.opacity = '0';
         }, duration);
     }
-
     function updateButtonState(isEnabled) {
         if (isEnabled) {
             toggleButton.textContent = STRINGS.POPUP.TOGGLE_ENABLED;
@@ -53,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         chrome.runtime.sendMessage({ type: "UPDATE_BLOCKING_STATE", isEnabled: isEnabled });
     }
-    
     function updateWhitelistButton(hostname, whitelistedDomains) {
         if (whitelistedDomains.includes(hostname)) {
             toggleWhitelistButton.textContent = STRINGS.POPUP.WHITELIST_REMOVE;
@@ -63,15 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleWhitelistButton.className = 'not-whitelisted';
         }
     }
-
     initializeUI();
-
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const currentTab = tabs[0];
         if (currentTab && currentTab.url && currentTab.url.startsWith('http')) {
             const url = new URL(currentTab.url);
             const currentHostname = url.hostname;
-
             chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true, [WHITELIST_KEY]: [] }, (result) => {
                 updateButtonState(result[BLOCKING_STATE_KEY]);
                 updateWhitelistButton(currentHostname, result[WHITELIST_KEY]);
@@ -84,17 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-
     showSettingsButton.addEventListener('click', () => {
         mainView.style.display = 'none';
         settingsView.style.display = 'block';
     });
-
     showMainButton.addEventListener('click', () => {
         settingsView.style.display = 'none';
         mainView.style.display = 'block';
     });
-
     toggleButton.addEventListener('click', () => {
         chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
             const currentState = result[BLOCKING_STATE_KEY];
@@ -109,7 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
-
     pickElementButton.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0] && tabs[0].id) {
@@ -126,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-
     toggleWhitelistButton.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const currentTab = tabs[0];
@@ -134,15 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 showStatus(STRINGS.POPUP.STATUS_WHITELIST_NO_PERMISSIONS, 3000);
                 return;
             }
-
             const url = new URL(currentTab.url);
             const currentHostname = url.hostname;
-
             chrome.storage.local.get({ [WHITELIST_KEY]: [] }, (result) => {
                 let whitelistedDomains = result[WHITELIST_KEY];
                 const isWhitelisted = whitelistedDomains.includes(currentHostname);
                 let statusMessage;
-
                 if (isWhitelisted) {
                     whitelistedDomains = whitelistedDomains.filter(domain => domain !== currentHostname);
                     statusMessage = STRINGS.POPUP.STATUS_WHITELIST_REMOVED(currentHostname);
@@ -151,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusMessage = STRINGS.POPUP.STATUS_WHITELIST_ADDED(currentHostname);
                 }
                 showStatus(statusMessage);
-                
                 chrome.storage.local.set({ [WHITELIST_KEY]: whitelistedDomains }, () => {
                     updateWhitelistButton(currentHostname, whitelistedDomains);
                     setTimeout(() => {
@@ -163,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
-
     downloadButton.addEventListener('click', () => {
         chrome.storage.local.get(['inspector_logs'], (result) => {
             if (result.inspector_logs && result.inspector_logs.length > 0) {
@@ -185,19 +166,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-
     clearButton.addEventListener('click', () => {
         chrome.storage.local.remove('inspector_logs', () => {
              showStatus(STRINGS.POPUP.STATUS_LOGS_CLEARED);
         });
     });
-
     resetCountButton.addEventListener('click', () => {
         chrome.runtime.sendMessage({ type: "RESET_AD_COUNT" }, (response) => {
              showStatus(STRINGS.POPUP.STATUS_COUNTER_RESET);
         });
     });
-
     resetCustomRulesButton.addEventListener('click', () => {
         chrome.storage.local.remove(CUSTOM_RULES_KEY, () => {
             showStatus(STRINGS.POPUP.STATUS_CUSTOM_RULES_RESET);
