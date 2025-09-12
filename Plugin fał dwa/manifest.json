@@ -17,21 +17,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.wp.pl/*",
-        "*://*.o2.pl/*",
-        "*://*.money.pl/*",
-        "*://*.pudelek.pl/*",
-        "*://*.sportowefakty.wp.pl/*",
-        "*://*.dobreprogramy.pl/*",
-        "*://*.autokult.pl/*",
-        "*://*.autocentrum.pl/*",
-        "*://*.domodi.pl/*",
-        "*://*.allani.pl/*",
-        "*://*.extradom.pl/*",
-        "*://*.superauto.pl/*",
-        "*://*.totalmoney.pl/*",
-        "*://*.parenting.pl/*",
-        "*://*.abczdrowie.pl/*"
+        "<all_urls>"
       ],
       "js": ["remover.js"],
       "run_at": "document_idle"
