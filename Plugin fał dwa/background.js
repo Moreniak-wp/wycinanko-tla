@@ -1,12 +1,5 @@
-// background.js - v7.5 (w pełni zrefaktoryzowany z użyciem stałych)
-
-// Zakładamy, że obiekty STRINGS, STORAGE_KEYS i MESSAGE_TYPES są zdefiniowane
-// w osobnym pliku (np. constants.js) i zaimportowane.
+// background.js - v7.5 
 console.log(STRINGS.BACKGROUND.INIT);
-
-// ==================================================================
-// SEKCJA ZARZĄDZANIA PROXY
-// ==================================================================
 
 async function applyProxySettings() {
     try {
@@ -40,10 +33,6 @@ async function applyProxySettings() {
     }
 }
 
-// ==================================================================
-// SEKCJA ZARZĄDZANIA REGUŁAMI SIECIOWYMI
-// ==================================================================
-
 function setupNetRules() {
     const LONG_URL_RULE_ID = 1001;
     const longUrlRule = {
@@ -70,9 +59,6 @@ function setupNetRules() {
     });
 }
 
-// ==================================================================
-// SEKCJA ZARZĄDZANIA INTERFEJSEM UŻYTKOWNIKA
-// ==================================================================
 
 const ICON_PATHS = {
     ENABLED: { "16": "icons/icon16_active.png", "48": "icons/icon48_active.png", "128": "icons/icon128_active.png" },
@@ -85,21 +71,15 @@ function updateExtensionIcon(isEnabled) {
 }
 
 async function updateBadgeText() {
-    // Użycie stałej z STORAGE_KEYS
     const result = await chrome.storage.local.get(STORAGE_KEYS.BLOCKED_ADS_COUNT);
     const count = result[STORAGE_KEYS.BLOCKED_ADS_COUNT] || 0;
     chrome.action.setBadgeBackgroundColor({ color: [255, 0, 0, 255] });
     chrome.action.setBadgeText({ text: count > 0 ? count.toString() : '' });
 }
 
-// ==================================================================
-// GŁÓWNE NASŁUCHIWACZE ZDARZEŃ
-// ==================================================================
-
 chrome.runtime.onInstalled.addListener(() => {
     setupNetRules();
     applyProxySettings();
-    // Użycie stałej z STORAGE_KEYS
     chrome.storage.local.get({ [STORAGE_KEYS.IS_BLOCKING_ENABLED]: true }, (result) => {
         updateExtensionIcon(result[STORAGE_KEYS.IS_BLOCKING_ENABLED]);
         updateBadgeText();
@@ -109,7 +89,6 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onStartup.addListener(() => {
     setupNetRules();
     applyProxySettings();
-    // Użycie stałej z STORAGE_KEYS
     chrome.storage.local.get({ [STORAGE_KEYS.IS_BLOCKING_ENABLED]: true }, (result) => {
         updateExtensionIcon(result[STORAGE_KEYS.IS_BLOCKING_ENABLED]);
         updateBadgeText();
@@ -117,7 +96,6 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    // Użycie stałych z MESSAGE_TYPES
     switch (message.type) {
         case MESSAGE_TYPES.UPDATE_BLOCKING_STATE:
             updateExtensionIcon(message.isEnabled);

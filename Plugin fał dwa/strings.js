@@ -1,6 +1,3 @@
-// Plik: constants.js
-// Centralne miejsce dla wszystkich stałych tekstowych, kluczy i typów wiadomości.
-
 const STRINGS = {
     POPUP: {
         TITLE: "WP Ad Remover",
@@ -73,10 +70,6 @@ const STRINGS = {
     }
 };
 
-/**
- * Klucze używane do zapisu i odczytu danych z chrome.storage.local.
- * Centralizacja zapobiega literówkom i ułatwia zarządzanie.
- */
 const STORAGE_KEYS = {
     IS_BLOCKING_ENABLED: 'isBlockingEnabled',
     BLOCKED_ADS_COUNT: 'blockedAdsCount',
@@ -88,10 +81,6 @@ const STORAGE_KEYS = {
     PROXY_PORT: 'proxyPort'
 };
 
-/**
- * Typy wiadomości przesyłanych między komponentami rozszerzenia (np. background <-> popup).
- * Używanie stałych zamiast stringów zapewnia spójność i eliminuje błędy.
- */
 const MESSAGE_TYPES = {
     UPDATE_BLOCKING_STATE: "UPDATE_BLOCKING_STATE",
     AD_BLOCKED: "AD_BLOCKED",
