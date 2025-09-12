@@ -19,7 +19,7 @@ const STRINGS = {
         STATUS_PICKER_UNAVAILABLE: "Pipis nie ma tu władzy",
         STATUS_PICKER_NO_TAB: "Aktywna karta machen",
         STATUS_WHITELIST_NO_PERMISSIONS: "Ni ma pozwulynia na edycje stryny",
-        STATUS_WHITELIST_REMOVED: (hostname) => `chcesz reklamy abyśmy usuwali? co my jesteśmy? adblock, a nie czej. na ${hostname} reklamy będą blokowane`,
+        STATUS_WHITELIST_REMOVED: (hostname) => `chcesz reklamy abyśmy usuwali? co my jesteśmy? adblock, a nie czej`,
         STATUS_WHITELIST_ADDED: (hostname) => `Skoro ładnie poprosiłeś to możemy dla ${hostname} nie blokować reklam`,
         STATUS_LOGS_DOWNLOAD_EMPTY: 'Jak ty chcesz pobrać logi jak ich kurwa nie ma???',
         STATUS_LOGS_CLEARED: 'Mi logi...',
