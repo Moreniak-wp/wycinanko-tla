@@ -31,5 +31,11 @@
       "48": "pliki/icons/icon48_active.png",
       "128": "pliki/icons/icon128_active.png"
     }
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [ "audio/trusk.mp3" ],
+      "matches": [ "<all_urls>" ]
+    }
+  ]
 }

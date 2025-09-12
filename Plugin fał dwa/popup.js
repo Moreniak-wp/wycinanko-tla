@@ -83,20 +83,25 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsView.style.display = 'none';
         mainView.style.display = 'block';
     });
-    toggleButton.addEventListener('click', () => {
-        chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
-            const currentState = result[BLOCKING_STATE_KEY];
-            const newState = !currentState;
-            chrome.storage.local.set({ [BLOCKING_STATE_KEY]: newState }, () => {
-                updateButtonState(newState);
-                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                    if (tabs[0] && tabs[0].id) {
-                        chrome.tabs.reload(tabs[0].id);
-                    }
-                });
+ toggleButton.addEventListener('click', () => {
+    chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
+        const currentState = result[BLOCKING_STATE_KEY];
+        const newState = !currentState;
+           if (currentState === true) {
+                        const audio = new Audio(chrome.runtime.getURL('pliki/kurczaki-ziemniaki-tusk.mp3'));
+               audio.play();
+        }
+        chrome.storage.local.set({ [BLOCKING_STATE_KEY]: newState }, () => {
+            updateButtonState(newState);
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0] && tabs[0].id) {
+                    chrome.tabs.reload(tabs[0].id);
+                }
             });
         });
     });
+});
+
     pickElementButton.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0] && tabs[0].id) {
