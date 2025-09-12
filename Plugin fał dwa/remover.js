@@ -1,4 +1,4 @@
-// remover.js - v26.5 - "Pipis Fix"
+// remover.js - v26.5 - "Pipis Fix" 
 console.log("WP Ad Inspector (v26.3) - CONTROLLER - Initialized.");
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
@@ -38,27 +38,23 @@ function generateSelector(el) {
         if (el.id) {
             selector += '#' + el.id;
             parts.unshift(selector);
-            break; 
+            break;
         } else {
             let sib = el, nth = 1;
             while (sib = sib.previousElementSibling) {
                 if (sib.nodeName.toLowerCase() == selector) nth++;
             }
             if (nth != 1) selector += `:nth-of-type(${nth})`;
-  }
+        }
         parts.unshift(selector);
         el = el.parentNode;
     }
     return parts.join(' > ');
 }
 
-async function handleClick(e) {
-     e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    const target = e.target;
+async function processElementSelection(target) {
     const newSelector = generateSelector(target);
-    
+
     logEvent(`Picker: User selected element to hide with selector: ${newSelector}`, target);
 
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
@@ -70,36 +66,47 @@ async function handleClick(e) {
     }
 
     target.style.display = 'none';
-
     deactivatePicker();
 }
+
+function handleClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    processElementSelection(e.target);
+}
+
 function handleMouseOver(e) {
     if (highlightedElement) {
-        highlightedElement.style.outline = ''; 
+        highlightedElement.style.outline = '';
     }
     highlightedElement = e.target;
-    highlightedElement.style.outline = '2px dashed red'; 
+    highlightedElement.style.outline = '2px dashed red';
 }
 
 function activatePicker() {
     if (isPickerActive) return;
     isPickerActive = true;
     logEvent("Picker: Activated.");
-    document.addEventListener('mouseover', handleMouseOver);
-    document.addEventListener('click', handleClick, true); 
-     document.addEventListener('mousedown', handleClick, true);
+    document.addEventListener('mouseover', handleMouseOver, true);
+    document.addEventListener('pointerdown', handleClick, true);
+    document.addEventListener('mousedown', handleClick, true);
+    document.addEventListener('click', handleClick, true);
 }
+
 function deactivatePicker() {
     if (!isPickerActive) return;
     isPickerActive = false;
     if (highlightedElement) {
         highlightedElement.style.outline = '';
     }
-    document.removeEventListener('mouseover', handleMouseOver);
-    document.removeEventListener('click', handleClick, true);
+    document.removeEventListener('mouseover', handleMouseOver, true);
+    document.removeEventListener('pointerdown', handleClick, true);
     document.removeEventListener('mousedown', handleClick, true);
+    document.removeEventListener('click', handleClick, true);
     logEvent("Picker: Deactivated.");
 }
+
 async function applyCustomRules() {
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
@@ -113,11 +120,12 @@ async function applyCustomRules() {
                     element.style.setProperty('display', 'none', 'important');
                 }
             });
-             } catch (e) {
+        } catch (e) {
             logEvent(`CustomRule Error: Invalid selector '${selector}'.`);
         }
     }
 }
+
 function hidePrimaryAds() {
     const primaryAdSelectors = [
         '[id^="google_ads_iframe_"]', '[id^="div-gpt-ad-"]', '.adsbygoogle',
@@ -128,11 +136,12 @@ function hidePrimaryAds() {
     document.querySelectorAll(primaryAdSelectors.join(',')).forEach(element => {
         const target = element.tagName === 'IFRAME' ? element.parentElement : element;
         if (target && target.parentElement && target.style.display !== 'none') {
-            logEvent("PrimaryDetection: Hiding generic ad element.", target, true); 
+            logEvent("PrimaryDetection: Hiding generic ad element.", target, true);
             target.style.setProperty('display', 'none', 'important');
         }
     });
 }
+
 function hideFallbackAds() {
     const FALLBACK_CDN_HOST = 'v.wpimg.pl';
     const TRACKING_LINK_LENGTH_THRESHOLD = 150;
@@ -140,7 +149,7 @@ function hideFallbackAds() {
     const MAX_AD_HEIGHT_PX = 450;
     const DO_NOT_HIDE_SELECTORS = ['#wp-site-main', 'main', '#page', '#app', '#root', '.article-body', '.wp-section-aside'];
     const CONTENT_TAGS = ['h2', 'h3', 'h4', 'h5', 'p', 'span'];
-    const AD_KEYWORDS = ['REKLAMA', 'SPONSOROWANY', 'PROMOCJA','MAT. SPONSOROWANY', 'MAT. P'];
+    const AD_KEYWORDS = ['REKLAMA', 'SPONSOROWANY', 'PROMOCJA', 'MAT. SPONSOROWANY', 'MAT. P'];
     document.querySelectorAll(`img[src*="${FALLBACK_CDN_HOST}"]`).forEach(img => {
         const link = img.closest('a');
         if (!link || !link.href) return;
@@ -160,15 +169,17 @@ function hideFallbackAds() {
         } else { logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container, true); container.style.setProperty('display', 'none', 'important'); }
     });
 }
+
 function hidePlaceholders() {
     const placeholderSelector = '.wp-section-placeholder-container';
     document.querySelectorAll(placeholderSelector).forEach(element => {
         if (element.style.display !== 'none') {
-            logEvent("PlaceholderCollapse: Hiding dedicated ad placeholder container.", element, true); 
+            logEvent("PlaceholderCollapse: Hiding dedicated ad placeholder container.", element, true);
             element.style.setProperty('display', 'none', 'important');
         }
     });
 }
+
 function applySafetyNet() {
     const CRITICAL_SELECTORS = ['body', '#wp-site-main', 'main', '#page', '#app', '#root'];
     CRITICAL_SELECTORS.forEach(selector => {
@@ -193,9 +204,9 @@ async function runAllRoutines() {
     if (window.blockingDisabledLogged) {
         window.blockingDisabledLogged = false;
     }
-    
-    await applyCustomRules(); 
-    
+
+    await applyCustomRules();
+
     hidePrimaryAds();
     hideFallbackAds();
     hidePlaceholders();
@@ -209,6 +220,7 @@ setTimeout(async () => {
 }, 500);
 
 setInterval(runAllRoutines, 1500);
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "ACTIVATE_PICKER") {
         activatePicker();
