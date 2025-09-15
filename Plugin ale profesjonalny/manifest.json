@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "WP Ad Inspector (v21.0)",
+  "version": "21.0",
+  "description": "Stable ad hiding with advanced logging capabilities.",
+  "permissions": [
+    "declarativeNetRequest",
+    "storage",
+    "tabs",
+    "proxy"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "service-worker-loader.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": ["strings.js", "remover.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "pliki/icons/icon16_active.png",
+      "48": "pliki/icons/icon48_active.png",
+      "128": "pliki/icons/icon128_active.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [ "pliki/*" ],
+      "matches": [ "<all_urls>" ]
+    }
+  ]
+}
