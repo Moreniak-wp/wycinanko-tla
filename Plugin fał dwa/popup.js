@@ -90,7 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
            if (currentState === true) {
                         const audio = new Audio(chrome.runtime.getURL('pliki/kurczaki-ziemniaki-tusk.mp3'));
                audio.play();
-        }
+        } else {
+    const audio = new Audio(chrome.runtime.getURL('pliki/barka.mp3'));
+    audio.play();
+}
         chrome.storage.local.set({ [BLOCKING_STATE_KEY]: newState }, () => {
             updateButtonState(newState);
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
