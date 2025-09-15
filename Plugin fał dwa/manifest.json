@@ -34,7 +34,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [ "audio/trusk.mp3" ],
+      "resources": [ "pliki/*" ],
       "matches": [ "<all_urls>" ]
     }
   ]

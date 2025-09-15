@@ -13,7 +13,7 @@ const STRINGS = {
         SETTINGS_RESET_COUNTER: 'Atak kamikadze na licznik reklam',
         SETTINGS_DOWNLOAD_LOGS: 'Wykradnij dane żądowe',
         SETTINGS_CLEAR_LOGS: 'Zajeb Logi',
-        SETTINGS_BACK: 'Powrót',
+        SETTINGS_BACK: 'Jasna strona księżyca',
         LOADING: 'Ładuje sie kurde ten',
         WHITELIST_BUTTON_DEFAULT: 'Białalista',
         STATUS_PICKER_UNAVAILABLE: "Pipis nie ma tu władzy",
