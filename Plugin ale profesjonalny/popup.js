@@ -76,28 +76,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     showSettingsButton.addEventListener('click', () => {
-         const audio = new Audio(chrome.runtime.getURL('pliki/moon.mp3  ')); 
-    audio.play();
         mainView.style.display = 'none';
         settingsView.style.display = 'block';
     });
     showMainButton.addEventListener('click', () => {
-        const audio = new Audio(chrome.runtime.getURL('pliki/moontheme.mp3')); 
-    audio.play();
         settingsView.style.display = 'none';
         mainView.style.display = 'block';
     });
  toggleButton.addEventListener('click', () => {
     chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
         const currentState = result[BLOCKING_STATE_KEY];
-        const newState = !currentState;
-           if (currentState === true) {
-                        const audio = new Audio(chrome.runtime.getURL('pliki/kurczaki-ziemniaki-tusk.mp3'));
-               audio.play();
-        } else {
-    const audio = new Audio(chrome.runtime.getURL('pliki/barka.mp3'));
-    audio.play();
-}
+        const newState = !currentState
         chrome.storage.local.set({ [BLOCKING_STATE_KEY]: newState }, () => {
             updateButtonState(newState);
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
