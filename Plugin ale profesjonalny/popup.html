@@ -4,46 +4,117 @@
     <meta charset="UTF-8">
     <title>WP Ad Remover</title>
     <style>
-        body { text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000; color: red; width: 200px; font-family: sans-serif; text-align: center; padding: 10px; background: #8322c3;
-background: radial-gradient(circle, rgba(131, 34, 195, 1) 0%, rgba(193, 12, 247, 1) 20%, rgba(217, 28, 75, 1) 40%, rgba(227, 214, 32, 1) 100%); }
-        button { width: 100%; padding: 10px; font-size: 16px; cursor: pointer; border-radius: 15px; border-style: groove; border-width: 8px; border-color: blueviolet; background-color: midnightblue; color: red; margin-bottom: 8px; }
-        button#toggleBlocking.enabled { background-color: #c70000; border-color: #ff4d4d; color: white; }
-        button#toggleBlocking.disabled { background-color: #006400; border-color: #32cd32; color: white; }
-        button#toggleWhitelist.whitelisted { background-color: #006400; border-color: #32cd32; color: white; }
-        button#toggleWhitelist.not-whitelisted { background-color: #c70000; border-color: #ff4d4d; color: white; }
-        hr { border: 1px solid blueviolet; margin: 15px 0; }
+        :root {
+            --background-dark: #22262B;
+            --accent-gold: #D4B26A;
+            --accent-orange-particle: #E8A87C;
+            --text-primary: #EAEAEA;
+            --text-secondary: #A0A0A0;
+            --action-green: #4A6D4D;
+            --action-red: #9A3B3B;
+        }
+        body {
+            width: 250px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            margin: 0;
+            overflow: hidden;
+        }
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+        h3, button, hr, #statusMessage {
+            position: relative; /* Upewnia się, że elementy UI są renderowane poprawnie */
+        }
+        h3 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+        button {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid var(--accent-gold);
+            margin-bottom: 12px;
+            transition: background-color 0.25s ease, color 0.25s ease, transform 0.1s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .btn-primary { background-color: var(--accent-gold); color: var(--background-dark); }
+        .btn-primary:hover { background-color: #e0c284; border-color: #e0c284; }
+        .btn-secondary { background-color: transparent; color: var(--accent-gold); }
+        .btn-secondary:hover { background-color: var(--accent-gold); color: var(--background-dark); }
+        button#toggleBlocking.enabled { background-color: var(--action-red); color: var(--text-primary); border-color: var(--action-red); }
+        button#toggleBlocking.enabled:hover { background-color: #b34e4e; border-color: #b34e4e; }
+        button#toggleBlocking.disabled { background-color: var(--action-green); color: var(--text-primary); border-color: var(--action-green); }
+        button#toggleBlocking.disabled:hover { background-color: #5c8a60; border-color: #5c8a60; }
+        button#toggleWhitelist.whitelisted { background-color: var(--action-green); color: var(--text-primary); border-color: var(--action-green); }
+        button#toggleWhitelist.not-whitelisted { background-color: var(--action-red); color: var(--text-primary); border-color: var(--action-red); }
+        hr {
+            border: none;
+            height: 1px;
+            margin: 20px 0;
+            background-image: linear-gradient(to right, transparent, rgba(212, 178, 106, 0.3), transparent);
+        }
         #settings-view { display: none; }
         #statusMessage {
-            min-height: 18px; 
-            font-weight: bold;
-            color: white;
-            text-shadow: 1px 1px 2px #000;
-            transition: opacity 0.3s ease-in-out;
-            opacity: 0; 
-            margin-top: 5px;
+            min-height: 20px; font-size: 12px; color: var(--text-secondary);
+            transition: opacity 0.3s ease-in-out; opacity: 0; margin-top: 10px; font-weight: 400;
         }
     </style>
 </head>
 <body>
-    <h3 id="headerTitle"></h3>
-    <div id="main-view">
-        <button id="toggleBlocking"></button>
-        <button id="toggleWhitelist"></button>
-        <hr>
-        <button id="showSettings"></button>
+    <div id="particles-js"></div>
+    
+    <div class="content-wrapper">
+        <h3 id="headerTitle"></h3>
+        <div id="main-view">
+            <button id="toggleBlocking"></button>
+            <button id="toggleWhitelist" class="btn-primary"></button>
+            <hr>
+            <button id="showSettings" class="btn-secondary"></button>
+        </div>
+        <div id="settings-view">
+            <button id="pickElement" class="btn-primary"></button>
+            <button id="resetCustomRules" class="btn-primary"></button>
+            <hr>
+            <button id="resetCount" class="btn-secondary"></button>
+            <button id="downloadLogs" class="btn-secondary"></button>
+            <button id="clearLogs" class="btn-secondary"></button>
+            <hr>
+            <button id="showMain" class="btn-secondary"></button>
+        </div>
+        <div id="statusMessage"></div>
     </div>
-    <div id="settings-view">
-        <button id="pickElement"></button>
-        <button id="resetCustomRules"></button> 
-        <hr>
-        <button id="resetCount"></button>
-        <button id="downloadLogs"></button>
-        <button id="clearLogs"></button>
-        <hr>
-        <button id="showMain"></button>
-    </div>
-    <div id="statusMessage"></div>
+    
     <script src="strings.js"></script>
     <script src="popup.js"></script>
+    
+    <!-- === POPRAWIONE SKRYPTY === -->
+    <script src="tsparticles.bundle.min.js"></script>
+    <script src="particles-init.js"></script>
+    
 </body>
 </html>
