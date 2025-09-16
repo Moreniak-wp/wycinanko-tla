@@ -1,40 +1,40 @@
 // particles-init.js
 tsParticles.load("particles-js", {
-    fpsLimit: 60,
+    fpsLimit: 60, 
     particles: {
         number: {
-            value: 100, 
+            value: 100, //ilość cyćków
             density: {
-                enable: true,
-                value_area: 800
+                enable: true, 
+                value_area: 800 //im niższy numer tym więcej cyćków
             }
         },
         color: {
-            value: "#E8A87C"
+            value: "#e5ff00ff" //kolor cyćków
         },
         shape: {
-            type: "circle"
+            type: "circle" //kształt cyćków
         },
         opacity: {
             value: 0.6, 
             random: true,
         },
         size: {
-            value: { min: 0.1, max: 0.1 }
+            value: { min: 0.1, max: 0.1 } //wielkość cyćków
         },
         move: {
-            enable: true,
-            speed: 2.1,
-            direction: "none",
+            enable: true, //czy cyćki mają się poruszać
+            speed: 2.1, //szybkość cyćków
+            direction: "none", //kierunek cyćków
             out_mode: "out",
-            bounce: false
+            bounce: false //czy cyćki mają się odbijać
         },
         links: {
-            enable: true,
-            distance: 200,
-            color: "#D4B26A",
-            opacity: 9.9, 
-            width: 0.5
+            enable: true, //czy mają być linie między cyćkami
+            distance: 200, //długość lini między cyćkami
+            color: "#D4B26A", //kolor lini
+            opacity: 9.9, //widoczność lini
+            width: 0.5 //szerokość lini
         }
     },
     interactivity: {
