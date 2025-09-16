@@ -3,7 +3,7 @@ tsParticles.load("particles-js", {
     fpsLimit: 60,
     particles: {
         number: {
-            value: 70, 
+            value: 100, 
             density: {
                 enable: true,
                 value_area: 800
@@ -20,21 +20,21 @@ tsParticles.load("particles-js", {
             random: true,
         },
         size: {
-            value: { min: 2, max: 4 }
+            value: { min: 0.1, max: 0.1 }
         },
         move: {
             enable: true,
-            speed: 0.8,
+            speed: 2.1,
             direction: "none",
             out_mode: "out",
             bounce: false
         },
         links: {
             enable: true,
-            distance: 150,
+            distance: 200,
             color: "#D4B26A",
-            opacity: 0.3, 
-            width: 1
+            opacity: 9.9, 
+            width: 0.5
         }
     },
     interactivity: {
