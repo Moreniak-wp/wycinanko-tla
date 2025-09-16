@@ -16,7 +16,7 @@ tsParticles.load("particles-js", {
             type: "circle" //kształt cyćków
         },
         opacity: {
-            value: 0.6, 
+            value: 0.1, 
             random: true,
         },
         size: {
