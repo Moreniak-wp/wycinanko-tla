@@ -1,4 +1,4 @@
-// background.js - v7.5 
+// background.js - v7.5
 console.log(STRINGS.BACKGROUND.INIT);
 
 async function applyProxySettings() {
@@ -32,34 +32,112 @@ async function applyProxySettings() {
         console.error(STRINGS.PROXY.SETUP_ERROR, error);
     }
 }
+function setupAdBlockingNetRules() {
+    const BLOCKING_START_ID = 10000; 
+    let currentRuleId = BLOCKING_START_ID;
+    const adBlockingFilters = [
+        "*://*.googlesyndication.com/*",
+        "*://*.doubleclick.net/*",
+        "*://*.adocean.pl/*",
+        "*://*.adocean.net/*",
+        "*://*.gemius.pl/*",
+        "*://*.gemius.net/*",
+        "*://ad.wp.pl/*",
+        "*://ads.wp.pl/*",
+        "*://www.google-analytics.com/*",
+        "*://googletagservices.com/*",
+        "*://cdn.ad.plus/*",
+        "*://securepubads.g.doubleclick.net/*",
+        "*://pagead2.googlesyndication.com/*",
+        "*://*.adservice.google.com/*",
+        "*://*.advertising.com/*",
+        "*://*.adform.net/*",
+        "*://*.adroll.com/*",
+        "*://*.criteo.com/*",
+        "*://*.adnxs.com/*",
+        "*://*.taboola.com/*",
+        "*://*.outbrain.com/*",
+        "*://*.mgid.com/*",
+        "*://*.revcontent.com/*",
+        "*://*.openx.net/*",
+        "*://*.rubiconproject.com/*",
+        "*://*.appnexus.com/*",
+        "*://*.yieldlab.net/*",
+        "*://*.pubmatic.com/*",
+        "*://*.bidswitch.net/*",
+        "*://*.indexww.com/*",
+        "*://*.krxd.net/*",
+        "*://*.quantserve.com/*",
+        "*://*.scorecardresearch.com/*",
+        "*://*.zedo.com/*",
+        "*://*.serving-sys.com/*",
+        "*://*.innovid.com/*",
+        "*://*.demdex.net/*",
+        "*://*.dpm.demdex.net/*",
+        "*://*.casalemedia.com/*",
+        "*://*.specificmedia.com/*",
+        "*://*.sharethrough.com/*",
+        "*://*.simpli.fi/*",
+        "*://*.teads.tv/*",
+        "*://*.adition.com/*",
+        "*://*.smartadserver.com/*",
+        "*://*.adspirit.de/*",
+        "*://*.adlibr.com/*",
+        "*://*.medianet.com/*",
+        "*://*.contextweb.com/*",
+        "*://*.pulsepoint.com/*",
+        "*://*.gumgum.com/*",
+        "*://*.bidthentic.com/*",
+        "*://*.advertising.com/*",
+        "*://*.tremorhub.com/*",
+        "*://*.brightroll.com/*",
+        "*://*.freewheel.tv/*",
+        "*://*.sizmek.com/*",
+        "*://*.spotx.tv/*",
+        "*://*.videology.com/*",
+        "*://*.verizonmedia.com/*" 
+    ];
 
-function setupNetRules() {
-    const LONG_URL_RULE_ID = 1001;
-    const longUrlRule = {
+    const rules = [];
+    for (const filter of adBlockingFilters) {
+        rules.push({
+            id: currentRuleId++,
+            priority: 1,
+            action: { type: 'block' },
+            condition: {
+                urlFilter: filter,
+                resourceTypes: ["main_frame", "sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "csp_report", "media", "websocket", "other"]
+            }
+        });
+    }
+    const LONG_URL_RULE_ID = 1001; 
+    rules.push({
         id: LONG_URL_RULE_ID,
-        priority: 1,
+        priority: 1, 
         action: { type: 'block' },
         condition: {
-            regexFilter: '.{150,}',
+            regexFilter: '.{150,}', 
             resourceTypes: ["main_frame", "sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "csp_report", "media", "websocket", "other"]
         }
-    };
-    chrome.declarativeNetRequest.getDynamicRules(existingRules => {
+    });
+
+
+    chrome.declarativeNetRequest.getDynamicRules((existingRules) => {
         const ruleIdsToRemove = existingRules.map(rule => rule.id);
+
         chrome.declarativeNetRequest.updateDynamicRules({
             removeRuleIds: ruleIdsToRemove,
-            addRules: [longUrlRule]
+            addRules: rules
         }, () => {
             if (chrome.runtime.lastError) {
-                console.error(STRINGS.BACKGROUND.RULES_SETUP_ERROR, chrome.runtime.lastError);
+                console.error(STRINGS.BACKGROUND.AD_BLOCKING_RULES_SETUP_ERROR, chrome.runtime.lastError);
             } else {
-                console.log(STRINGS.BACKGROUND.RULES_SETUP_SUCCESS);
+                console.log(STRINGS.BACKGROUND.AD_BLOCKING_RULES_SETUP_SUCCESS);
             }
         });
     });
 }
 
-//Marcel i swear to God jeśli znowu tutaj coś kurde ten namieszasz z ikoną to ja nie wyczymie
 const ICON_PATHS = {
     ENABLED: { "16": "pliki/icons/icon16_active.png", "32": "pliki/icons/icon32_active.png", "48": "pliki/icons/icon48_active.png", "128": "pliki/icons/icon128_active.png" },
     DISABLED: { "16": "pliki/icons/icon16_inactive.png", "32": "pliki/icons/icon32_inactive.png", "48": "pliki/icons/icon48_inactive.png", "128": "pliki/icons/icon128_inactive.png" }
@@ -78,7 +156,7 @@ async function updateBadgeText() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-    setupNetRules();
+    setupAdBlockingNetRules(); 
     applyProxySettings();
     chrome.storage.local.get({ [STORAGE_KEYS.IS_BLOCKING_ENABLED]: true }, (result) => {
         updateExtensionIcon(result[STORAGE_KEYS.IS_BLOCKING_ENABLED]);
@@ -87,7 +165,7 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onStartup.addListener(() => {
-    setupNetRules();
+    setupAdBlockingNetRules(); 
     applyProxySettings();
     chrome.storage.local.get({ [STORAGE_KEYS.IS_BLOCKING_ENABLED]: true }, (result) => {
         updateExtensionIcon(result[STORAGE_KEYS.IS_BLOCKING_ENABLED]);
@@ -99,6 +177,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message.type) {
         case MESSAGE_TYPES.UPDATE_BLOCKING_STATE:
             updateExtensionIcon(message.isEnabled);
+            if (message.isEnabled) {
+                setupAdBlockingNetRules(); 
+            } else {
+            }
             sendResponse({ status: STRINGS.BACKGROUND.RESPONSE_ICON_UPDATED });
             break;
 

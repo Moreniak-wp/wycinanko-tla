@@ -33,6 +33,8 @@ const STRINGS = {
         INIT: "WP Ad Remover - Inicjalizacja rozszerzenia.",
         RULES_SETUP_ERROR: "Błąd podczas konfiguracji reguł sieciowych:",
         RULES_SETUP_SUCCESS: "Reguły sieciowe zostały poprawnie załadowane.",
+        AD_BLOCKING_RULES_SETUP_SUCCESS: "Reguły blokowania reklam na poziomie sieci zostały poprawnie załadowane.",
+        AD_BLOCKING_RULES_SETUP_ERROR: "Błąd podczas konfiguracji reguł blokowania reklam na poziomie sieci:",
         RESPONSE_ICON_UPDATED: "Ikona rozszerzenia została zaktualizowana.",
         RESPONSE_AD_COUNTER_UPDATED: "Licznik reklam został zaktualizowany.",
         RESPONSE_AD_COUNTER_RESET: "Licznik reklam został zresetowany."
