@@ -33,7 +33,7 @@ tsParticles.load("particles-js", {
             enable: true, //czy mają być linie między cyćkami
             distance: 200, //długość lini między cyćkami
             color: "#D4B26A", //kolor lini
-            opacity: 9.9, //widoczność lini
+            opacity: 1.0, //widoczność lini
             width: 0.5 //szerokość lini
         }
     },
