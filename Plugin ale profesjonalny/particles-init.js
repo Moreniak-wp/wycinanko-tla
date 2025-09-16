@@ -3,7 +3,7 @@ tsParticles.load("particles-js", {
     fpsLimit: 60,
     particles: {
         number: {
-            value: 70, // Nieco mniej, ponieważ są większe
+            value: 70, 
             density: {
                 enable: true,
                 value_area: 800
@@ -16,11 +16,10 @@ tsParticles.load("particles-js", {
             type: "circle"
         },
         opacity: {
-            value: 0.6, // Nieco większa widoczność
+            value: 0.6, 
             random: true,
         },
         size: {
-            // TUTAJ ZMIANA: cząsteczki będą miały losowy rozmiar od 2px do 4px
             value: { min: 2, max: 4 }
         },
         move: {
@@ -34,7 +33,7 @@ tsParticles.load("particles-js", {
             enable: true,
             distance: 150,
             color: "#D4B26A",
-            opacity: 0.3, // Nieco bardziej widoczne połączenia
+            opacity: 0.3, 
             width: 1
         }
     },
@@ -48,7 +47,7 @@ tsParticles.load("particles-js", {
         },
         modes: {
             repulse: {
-                distance: 80 // Zwiększony zasięg odpychania
+                distance: 80 
             }
         }
     },

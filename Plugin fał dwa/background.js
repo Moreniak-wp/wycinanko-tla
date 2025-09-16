@@ -1,4 +1,3 @@
-// background.js - v7.5 
 console.log(STRINGS.BACKGROUND.INIT);
 
 async function applyProxySettings() {
@@ -35,6 +34,8 @@ async function applyProxySettings() {
 
 function setupNetRules() {
     const LONG_URL_RULE_ID = 1001;
+    const AD_DOMAINS_RULE_ID = 1002;
+
     const longUrlRule = {
         id: LONG_URL_RULE_ID,
         priority: 1,
@@ -44,11 +45,22 @@ function setupNetRules() {
             resourceTypes: ["main_frame", "sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "csp_report", "media", "websocket", "other"]
         }
     };
+
+    const adDomainsRule = {
+        id: AD_DOMAINS_RULE_ID,
+        priority: 2,
+        action: { type: 'block' },
+        condition: {
+            urlFilter: "||*.doubleclick.net/*|*//*.googlesyndication.com/*|*//*.gemius.pl/*|*//*.adocean.pl/*",
+            resourceTypes: ["script", "xmlhttprequest", "image", "sub_frame", "ping"]
+        }
+    };
+
     chrome.declarativeNetRequest.getDynamicRules(existingRules => {
         const ruleIdsToRemove = existingRules.map(rule => rule.id);
         chrome.declarativeNetRequest.updateDynamicRules({
             removeRuleIds: ruleIdsToRemove,
-            addRules: [longUrlRule]
+            addRules: [longUrlRule, adDomainsRule]
         }, () => {
             if (chrome.runtime.lastError) {
                 console.error(STRINGS.BACKGROUND.RULES_SETUP_ERROR, chrome.runtime.lastError);
@@ -96,34 +108,34 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    switch (message.type) {
-        case MESSAGE_TYPES.UPDATE_BLOCKING_STATE:
-            updateExtensionIcon(message.isEnabled);
-            sendResponse({ status: STRINGS.BACKGROUND.RESPONSE_ICON_UPDATED });
-            break;
+    (async () => {
+        switch (message.type) {
+            case MESSAGE_TYPES.UPDATE_BLOCKING_STATE:
+                updateExtensionIcon(message.isEnabled);
+                sendResponse({ status: STRINGS.BACKGROUND.RESPONSE_ICON_UPDATED });
+                break;
 
-        case MESSAGE_TYPES.AD_BLOCKED:
-            chrome.storage.local.get(STORAGE_KEYS.BLOCKED_ADS_COUNT, (result) => {
+            case MESSAGE_TYPES.AD_BLOCKED:
+                const result = await chrome.storage.local.get(STORAGE_KEYS.BLOCKED_ADS_COUNT);
                 const currentCount = result[STORAGE_KEYS.BLOCKED_ADS_COUNT] || 0;
-                chrome.storage.local.set({ [STORAGE_KEYS.BLOCKED_ADS_COUNT]: currentCount + 1 }, () => {
-                    updateBadgeText();
-                });
-            });
-            sendResponse({ status: STRINGS.BACKGROUND.RESPONSE_AD_COUNTER_UPDATED });
-            break;
+                await chrome.storage.local.set({ [STORAGE_KEYS.BLOCKED_ADS_COUNT]: currentCount + 1 });
+                await updateBadgeText();
+                sendResponse({ status: STRINGS.BACKGROUND.RESPONSE_AD_COUNTER_UPDATED });
+                break;
 
-        case MESSAGE_TYPES.RESET_AD_COUNT:
-            chrome.storage.local.set({ [STORAGE_KEYS.BLOCKED_ADS_COUNT]: 0 }, () => {
-                updateBadgeText();
+            case MESSAGE_TYPES.RESET_AD_COUNT:
+                await chrome.storage.local.set({ [STORAGE_KEYS.BLOCKED_ADS_COUNT]: 0 });
+                await updateBadgeText();
                 sendResponse({ status: STRINGS.BACKGROUND.RESPONSE_AD_COUNTER_RESET });
-            });
-            break;
+                break;
 
-        case MESSAGE_TYPES.UPDATE_PROXY_SETTINGS:
-            applyProxySettings();
-            sendResponse({ status: STRINGS.PROXY.RESPONSE_UPDATED });
-            console.log(STRINGS.PROXY.RESPONSE_UPDATED);
-            break;
-    }
+            case MESSAGE_TYPES.UPDATE_PROXY_SETTINGS:
+                await applyProxySettings();
+                sendResponse({ status: STRINGS.PROXY.RESPONSE_UPDATED });
+                console.log(STRINGS.PROXY.RESPONSE_UPDATED);
+                break;
+        }
+    })();
+    
     return true;
 });

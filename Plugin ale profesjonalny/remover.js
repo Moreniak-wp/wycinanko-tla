@@ -1,5 +1,5 @@
-// remover.js - v27.0 - "Majster Wajt musisz tą listę podpisać" 
-console.log("WP Ad Inspector (v27.0) - CONTROLLER - Initialized.");
+// remover.js zapomniałem która to już wersja 
+console.log("WP Ad Inspector (v28.0) - CONTROLLER - Initialized.");
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';

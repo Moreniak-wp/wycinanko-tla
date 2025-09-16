@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsView.style.display = 'block';
     });
     showMainButton.addEventListener('click', () => {
-        const audio = new Audio(chrome.runtime.getURL('pliki/moontheme.mp3')); 
+        const audio = new Audio(chrome.runtime.getURL('pliki/car.mp3')); 
     audio.play();
         settingsView.style.display = 'none';
         mainView.style.display = 'block';
@@ -179,11 +179,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     clearButton.addEventListener('click', () => {
-        chrome.storage.local.remove('inspector_logs', () => {
+        const audio = new Audio(chrome.runtime.getURL('pliki/xp.mp3'));
+        audio.play();
+        chrome.storage.local.remove('inspector_logs', (response) => {
              showStatus(STRINGS.POPUP.STATUS_LOGS_CLEARED);
         });
     });
     resetCountButton.addEventListener('click', () => {
+        const audio = new Audio(chrome.runtime.getURL('pliki/syzyf.mp3'));
+        audio.play();
         chrome.runtime.sendMessage({ type: "RESET_AD_COUNT" }, (response) => {
              showStatus(STRINGS.POPUP.STATUS_COUNTER_RESET);
         });
