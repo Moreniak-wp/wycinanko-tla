@@ -24,7 +24,7 @@ tsParticles.load("particles-js", {
         },
         move: {
             enable: true, //czy cyćki mają się poruszać
-            speed: 2.1, //szybkość cyćków
+            speed: 2.137, //szybkość cyćków
             direction: "none", //kierunek cyćków
             out_mode: "out",
             bounce: false //czy cyćki mają się odbijać
