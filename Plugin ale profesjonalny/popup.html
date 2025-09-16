@@ -1,9 +1,15 @@
 <!DOCTYPE html>
+<!-- Ustawienie języka dokumentu na polski -->
 <html lang="PL">
 <head>
+    <!-- Ustawienie kodowania znaków na UTF-8, aby poprawnie wyświetlać polskie znaki -->
     <meta charset="UTF-8">
+    <!-- Tytuł okienka rozszerzenia (zwykle niewidoczny dla użytkownika) -->
     <title>WP Ad Remover</title>
+
+    <!-- Sekcja <style> zawiera wszystkie reguły CSS, które definiują wygląd interfejsu -->
     <style>
+        /* :root definiuje globalne zmienne CSS (paletę kolorów) dla łatwego zarządzania motywem */
         :root {
             --background-dark: #22262B;
             --accent-gold: #D4B26A;
@@ -13,6 +19,8 @@
             --action-green: #4A6D4D;
             --action-red: #9A3B3B;
         }
+
+        /* Style dla głównego elementu `body` - definiują rozmiar okienka, czcionkę i kolory */
         body {
             width: 250px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -21,24 +29,32 @@
             background-color: var(--background-dark);
             color: var(--text-primary);
             margin: 0;
-            overflow: hidden;
+            overflow: hidden; /* Zapobiega "wylewaniu się" animacji tła poza okienko */
         }
+
+        /* Styl dla kontenera animacji tła (cząsteczek) */
         #particles-js {
             position: absolute;
             width: 100%;
             height: 100%;
             top: 0;
             left: 0;
-            z-index: 0;
-            filter: blur(1px); /* <-- Dodałem tę linię, aby rozmyć tło */
+            z-index: 0; /* Umieszcza tło pod wszystkimi innymi elementami */
+            filter: blur(1px); /* Delikatne rozmycie tła dla lepszej czytelności treści */
         }
+
+        /* Wrapper dla treści, który umieszcza ją nad animowanym tłem */
         .content-wrapper {
             position: relative;
-            z-index: 1;
+            z-index: 1; /* Upewnia się, że treść jest na wierzchu */
         }
+
+        /* Wspólne pozycjonowanie dla kluczowych elementów interfejsu */
         h3, button, hr, #statusMessage {
             position: relative;
         }
+
+        /* Styl nagłówka */
         h3 {
             margin-top: 0;
             margin-bottom: 25px;
@@ -47,6 +63,8 @@
             font-weight: 400;
             letter-spacing: 0.5px;
         }
+
+        /* Ogólne style dla wszystkich przycisków */
         button {
             width: 100%;
             padding: 12px 15px;
@@ -60,26 +78,40 @@
             text-transform: uppercase;
             letter-spacing: 0.8px;
         }
+
+        /* Efekt wciśnięcia przycisku */
         button:active {
             transform: scale(0.98);
         }
+
+        /* Style dla przycisków głównych i drugorzędnych */
         .btn-primary { background-color: var(--accent-gold); color: var(--background-dark); }
         .btn-primary:hover { background-color: #e0c284; border-color: #e0c284; }
         .btn-secondary { background-color: transparent; color: var(--accent-gold); }
         .btn-secondary:hover { background-color: var(--accent-gold); color: var(--background-dark); }
+
+        /* Style dynamiczne dla przycisku włącz/wyłącz, zależne od jego stanu (klasy .enabled/.disabled) */
         button#toggleBlocking.enabled { background-color: var(--action-red); color: var(--text-primary); border-color: var(--action-red); }
         button#toggleBlocking.enabled:hover { background-color: #b34e4e; border-color: #b34e4e; }
         button#toggleBlocking.disabled { background-color: var(--action-green); color: var(--text-primary); border-color: var(--action-green); }
         button#toggleBlocking.disabled:hover { background-color: #5c8a60; border-color: #5c8a60; }
+
+        /* Style dynamiczne dla przycisku białej listy */
         button#toggleWhitelist.whitelisted { background-color: var(--action-green); color: var(--text-primary); border-color: var(--action-green); }
         button#toggleWhitelist.not-whitelisted { background-color: var(--action-red); color: var(--text-primary); border-color: var(--action-red); }
+
+        /* Styl ozdobnej linii horyzontalnej */
         hr {
             border: none;
             height: 1px;
             margin: 20px 0;
             background-image: linear-gradient(to right, transparent, rgba(212, 178, 106, 0.3), transparent);
         }
+
+        /* Domyślnie ukrywa widok ustawień; JavaScript będzie go pokazywał */
         #settings-view { display: none; }
+
+        /* Styl dla obszaru komunikatów; domyślnie niewidoczny */
         #statusMessage {
             min-height: 20px; font-size: 12px; color: var(--text-secondary);
             transition: opacity 0.3s ease-in-out; opacity: 0; margin-top: 10px; font-weight: 400;
@@ -87,34 +119,46 @@
     </style>
 </head>
 <body>
+    <!-- Pusty kontener, w którym skrypt JavaScript wygeneruje animację tła -->
     <div id="particles-js"></div>
     
+    <!-- Główny kontener na całą treść interfejsu -->
     <div class="content-wrapper">
+        <!-- Nagłówek, którego treść zostanie wstawiona przez JavaScript -->
         <h3 id="headerTitle"></h3>
+        
+        <!-- "Ekran" główny z podstawowymi przyciskami akcji -->
         <div id="main-view">
-            <button id="toggleBlocking"></button>
-            <button id="toggleWhitelist" class="btn-primary"></button>
-            <button id="pickElement" class="btn-primary"></button>
+            <button id="toggleBlocking"></button> <!-- Przycisk Włącz/Wyłącz blokowanie -->
+            <button id="toggleWhitelist" class="btn-primary"></button> <!-- Przycisk dodawania do białej listy -->
+            <button id="pickElement" class="btn-primary"></button> <!-- Przycisk do ręcznego wybierania elementów do ukrycia -->
             <hr>
-            <button id="showSettings" class="btn-secondary"></button>
+            <button id="showSettings" class="btn-secondary"></button> <!-- Przycisk przełączający do widoku ustawień -->
         </div>
+
+        <!-- "Ekran" ustawień, domyślnie ukryty -->
         <div id="settings-view">
-            
-            <button id="resetCustomRules" class="btn-primary"></button>
+            <button id="resetCustomRules" class="btn-primary"></button> <!-- Przycisk resetowania własnych reguł -->
             <hr>
-            <button id="resetCount" class="btn-secondary"></button>
-            <button id="downloadLogs" class="btn-secondary"></button>
-            <button id="clearLogs" class="btn-secondary"></button>
+            <button id="resetCount" class="btn-secondary"></button> <!-- Przycisk resetu licznika -->
+            <button id="downloadLogs" class="btn-secondary"></button> <!-- Przycisk pobierania logów -->
+            <button id="clearLogs" class="btn-secondary"></button> <!-- Przycisk czyszczenia logów -->
             <hr>
-            <button id="showMain" class="btn-secondary"></button>
+            <button id="showMain" class="btn-secondary"></button> <!-- Przycisk powrotu do ekranu głównego -->
         </div>
+
+        <!-- Kontener na komunikaty dla użytkownika (np. "Zapisano!") -->
         <div id="statusMessage"></div>
     </div>
     
-    <script src="strings.js"></script>
-    <script src="popup.js"></script>
-    <script src="tsparticles.bundle.min.js"></script>
-    <script src="particles-init.js"></script>
+    <!--
+      Sekcja ładowania skryptów JavaScript.
+      Kolejność jest ważna: najpierw definicje, potem logika, na końcu skrypty dodatkowe.
+    -->
+    <script src="strings.js"></script> <!-- Plik z tekstami, co ułatwia tłumaczenia -->
+    <script src="popup.js"></script> <!-- Główny skrypt z logiką interfejsu (obsługa kliknięć, aktualizacja UI) -->
+    <script src="tsparticles.bundle.min.js"></script> <!-- Biblioteka do animacji cząsteczek w tle -->
+    <script src="particles-init.js"></script> <!-- Skrypt inicjalizujący i konfigurujący animację cząsteczek -->
     
 </body>
 </html>
