@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleButton.textContent = STRINGS.POPUP.TOGGLE_DISABLED;
             toggleButton.className = 'disabled';
         }
-        chrome.runtime.sendMessage({ type: "UPDATE_BLOCKING_STATE", isEnabled: isEnabled });
+        chrome.runtime.sendMessage({ type: "updateBlockingState", isEnabled: isEnabled });
     }
     function updateWhitelistButton(hostname, whitelistedDomains) {
         if (whitelistedDomains.includes(hostname)) {
