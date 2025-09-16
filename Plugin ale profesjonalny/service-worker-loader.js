@@ -1,5 +1,6 @@
+// service-worker-loader.js
 try {
-  importScripts('strings.js', 'background.js','service-worker.js');
+  importScripts('strings.js', 'service-worker.js');
 } catch (e) {
   console.error(e);
 }

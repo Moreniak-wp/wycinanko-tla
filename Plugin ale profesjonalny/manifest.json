@@ -1,42 +1,40 @@
 {
   "manifest_version": 3,
-  "name": "WP Ad Inspector (v29.0)",
-  "version": "29.0",
-  "description": "Bardzo fajny plugin",
+  "name": "WP Ad Inspector",
+  "version": "30.0",
+  "description": "Zaawansowany bloker reklam z filtrowaniem kosmetycznym i sieciowym.",
   "permissions": [
-    "declarativeNetRequest",
     "storage",
-    "tabs",
-    "proxy"
+    "declarativeNetRequest",
+    "proxy",
+    "scripting"
   ],
   "host_permissions": [
-    "*://*/*"
+    "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "service-worker-loader.js"
+  },
+  "action": {
+    "default_icon": {
+      "16": "pliki/icons/icon16_inactive.png",
+      "32": "pliki/icons/icon32_inactive.png",
+      "48": "pliki/icons/icon48_inactive.png",
+      "128": "pliki/icons/icon128_inactive.png"
+    },
+    "default_title": "WP Ad Inspector"
+  },
+  "icons": {
+    "16": "pliki/icons/icon16_active.png",
+    "32": "pliki/icons/icon32_active.png",
+    "48": "pliki/icons/icon48_active.png",
+    "128": "pliki/icons/icon128_active.png"
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": ["strings.js", "remover.js"],
+      "matches": ["<all_urls>"],
+      "js": ["remover.js"],
       "run_at": "document_start"
-    }
-  ],
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "pliki/icons/icon16_active.png",
-      "32": "pliki/icons/icon32_active.png",
-      "48": "pliki/icons/icon48_active.png",
-      "128": "pliki/icons/icon128_active.png"
-    }
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [ "pliki/*" ],
-      "matches": [ "<all_urls>" ]
     }
   ]
 }
