@@ -1,9 +1,21 @@
-// remover.js zapomniałem która to już wersja 
-console.log("WP Ad Inspector (v28.0) - CONTROLLER - Initialized.");
+// remover.js v28.2 - z trzema warstwami ochrony (EventHandler, PropertyDefine i natywne Proxy)
+console.log("WP Ad Inspector (v28.2) - CONTROLLER - Initialized.");
 
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';
 const WHITELIST_KEY = 'whitelistedDomains';
+
+const MONITORED_AD_SELECTORS = [
+    '[id^="google_ads_iframe_"]', '[id^="div-gpt-ad-"]', '.adsbygoogle',
+    '[id*="adocean"]', '[id*="gemius"]', '[data-ad-placeholder]', '[data-ad-slot]',
+    'ins.adsbygoogle', 'iframe[src*="googlesyndication.com"]', 'iframe[src*="doubleclick.net"]',
+    'div[data-google-query-id]', '[aria-label="Advertisement"]',
+    'a[href*="doubleclick.net"]', 'a[href*="ad.wp.pl"]'
+];
+
+// Używamy WeakMap, aby przechowywać nasze proxy. Zapobiega to wyciekom pamięci.
+// Jeśli element zostanie usunięty z DOM, garbage collector usunie go również z mapy.
+const elementProxyMap = new WeakMap();
 
 let isPickerActive = false;
 let highlightedElement = null;
@@ -31,6 +43,76 @@ function logEvent(message, element = null, isAdBlocked = false) {
     }
 }
 
+// WARSTWA 1: Przechwytywanie przez nadpisanie prototypu (globalne, najskuteczniejsze)
+function interceptEventHandlers() {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const monitoredEvents = ['click', 'mousedown', 'mouseup', 'touchstart'];
+    const selectorsString = MONITORED_AD_SELECTORS.join(',');
+
+    Element.prototype.addEventListener = function(type, listener, options) {
+        if (monitoredEvents.includes(type) && this.matches(selectorsString)) {
+            logEvent(`EventHandler-Guard (L1): Zablokowano próbę dodania '${type}' do reklamy.`, this, true);
+            this.style.setProperty('display', 'none', 'important');
+            return;
+        }
+        originalAddEventListener.call(this, type, listener, options);
+    };
+    logEvent("Init: Warstwa 1 (EventHandler-Guard) jest aktywna.");
+}
+
+// WARSTWA 2: Ochrona przez modyfikację właściwości obiektu DOM (globalne)
+async function applyPropertyGuardToElements() {
+    const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
+    const allSelectors = [...new Set([...MONITORED_AD_SELECTORS, ...result[CUSTOM_RULES_KEY]])];
+    const eventProperties = ['onclick', 'onmousedown', 'onmouseup', 'ontouchstart'];
+
+    document.querySelectorAll(allSelectors.join(',')).forEach(element => {
+        if (element.dataset.propertyGuarded) return;
+        element.dataset.propertyGuarded = 'true';
+
+        eventProperties.forEach(prop => {
+            Object.defineProperty(element, prop, {
+                configurable: true,
+                set: function(handler) {
+                    logEvent(`Property-Guard (L2): Zablokowano próbę ustawienia '${prop}' na reklamie.`, this, true);
+                    this.style.setProperty('display', 'none', 'important');
+                }
+            });
+        });
+    });
+}
+
+// NOWA SEKCJA: WARSTWA 3: Ochrona z użyciem JS Proxy (działa wewnątrz content_script)
+function applyTrueProxyGuard() {
+    const selectorsString = MONITORED_AD_SELECTORS.join(',');
+    const elementsToProxy = document.querySelectorAll(selectorsString);
+
+    elementsToProxy.forEach(el => {
+        // Sprawdzamy, czy dla tego elementu nie stworzyliśmy już proxy
+        if (elementProxyMap.has(el)) {
+            return;
+        }
+
+        const handler = {
+            set: function(target, prop, value) {
+                const eventProperties = ['onclick', 'onmousedown', 'onmouseup', 'ontouchstart'];
+                if (eventProperties.includes(prop)) {
+                    logEvent(`Proxy-Guard (L3): Przechwycono próbę ustawienia '${prop}' przez Proxy.`, target, true);
+                    target.style.setProperty('display', 'none', 'important');
+                    // Zwracamy true, aby udawać, że operacja się powiodła, ale w rzeczywistości ją blokujemy
+                    return true;
+                }
+                // Dla wszystkich innych właściwości pozwalamy na normalne działanie
+                return Reflect.set(target, prop, value);
+            }
+        };
+
+        const proxy = new Proxy(el, handler);
+        elementProxyMap.set(el, proxy);
+    });
+}
+
+
 function generateSelector(el) {
     if (!(el instanceof Element)) return null;
     const root = el.getRootNode();
@@ -38,7 +120,6 @@ function generateSelector(el) {
         if (el.id) return `#${CSS.escape(el.id)}`;
         return `${el.tagName.toLowerCase()}`;
     }
-
     const parts = [];
     while (el && el.nodeType === Node.ELEMENT_NODE) {
         let selector = el.nodeName.toLowerCase();
@@ -80,11 +161,9 @@ function handleElementSelection(e) {
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
-
     const trueTarget = e.composedPath && e.composedPath()[0] || e.target;
     let elementToRemove = trueTarget;
     let selector = null;
-
     try {
         const root = trueTarget.getRootNode();
         if (root instanceof ShadowRoot) {
@@ -96,14 +175,12 @@ function handleElementSelection(e) {
         logEvent(`!!! Picker Error: Failed during element analysis. Fallback to removing true target. Error: ${err.message}`);
         elementToRemove = trueTarget;
     }
-
     if (elementToRemove && elementToRemove.remove) {
         elementToRemove.remove();
         logEvent("Picker: Element removed successfully.", elementToRemove);
     } else {
         logEvent("Picker: FAILED to remove element.", elementToRemove);
     }
-
     deactivatePicker();
     saveNewCustomRule(selector);
     return false;
@@ -112,7 +189,6 @@ function handleElementSelection(e) {
 function handleMouseOver(e) {
     const trueTarget = e.composedPath && e.composedPath()[0] || e.target;
     if (highlightedElement === trueTarget) return;
-
     if (highlightedElement) {
         try {
             highlightedElement.style.outline = '';
@@ -149,7 +225,6 @@ async function applyCustomRules() {
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
     if (customRules.length === 0) return;
-
     for (const selector of customRules) {
         try {
             document.querySelectorAll(selector).forEach(element => {
@@ -171,14 +246,8 @@ async function applyCustomRules() {
 }
 
 function hidePrimaryAds() {
-    const primaryAdSelectors = [
-        '[id^="google_ads_iframe_"]', '[id^="div-gpt-ad-"]', '.adsbygoogle',
-        '[id*="adocean"]', '[id*="gemius"]', '[data-ad-placeholder]', '[data-ad-slot]',
-        'ins.adsbygoogle', 'iframe[src*="googlesyndication.com"]', 'iframe[src*="doubleclick.net"]',
-        'div[data-google-query-id]', '[aria-label="Advertisement"]'
-    ];
-    document.querySelectorAll(primaryAdSelectors.join(',')).forEach(element => {
-        const target = element.closest('div, ins, iframe');
+    document.querySelectorAll(MONITORED_AD_SELECTORS.join(',')).forEach(element => {
+        const target = element.closest('div, ins, iframe, a');
         if (target && target.parentElement && target.style.display !== 'none') {
             logEvent("PrimaryDetection: Hiding generic ad element.", target, true);
             target.style.setProperty('display', 'none', 'important');
@@ -260,20 +329,26 @@ async function runAllRoutines() {
     if(window.whitelistMessageLogged) {
          window.whitelistMessageLogged = false;
     }
-
     if (window.blockingDisabledLogged) {
         window.blockingDisabledLogged = false;
     }
+
+    // Uruchamianie wszystkich warstw obrony w pętli
     await applyCustomRules();
+    await applyPropertyGuardToElements(); // Warstwa 2
+    applyTrueProxyGuard();              // Warstwa 3 (eksperymentalna)
     hidePrimaryAds();
     hideFallbackAds();
     hidePlaceholders();
     applySafetyNet();
 }
 
+// Uruchomienie globalnego przechwytywania (Warstwa 1) na samym początku
+interceptEventHandlers();
+
 setTimeout(async () => {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
-    logEvent(`Init: Script v27.0 (Shadow of the PIPIS) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
+    logEvent(`Init: Script v28.2 (Shadow of the PIPIS) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
     await runAllRoutines();
 }, 500);
 
