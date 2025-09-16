@@ -61,8 +61,8 @@ function setupNetRules() {
 
 
 const ICON_PATHS = {
-    ENABLED: { "16": "icons/icon16_active.png", "48": "icons/icon48_active.png", "128": "icons/icon128_active.png" },
-    DISABLED: { "16": "icons/icon16_inactive.png", "48": "icons/icon48_inactive.png", "128": "icons/icon128_inactive.png" }
+    ENABLED: { "16": "pliki/icons/icon16_active.png", "48": "pliki/icons/icon48_active.png", "128": "pliki/icons/icon128_active.png" },
+    DISABLED: { "16": "pliki/icons/icon16_inactive.png", "48": "pliki/icons/icon48_inactive.png", "128": "pliki/icons/icon128_inactive.png" }
 };
 
 function updateExtensionIcon(isEnabled) {
