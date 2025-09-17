@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Przyciski i widoki
     const mainView = document.getElementById('main-view');
     const settingsView = document.getElementById('settings-view');
-    const rulesView = document.getElementById('rules-view'); // Nowy widok
+    const rulesView = document.getElementById('rules-view'); 
 
     // Przyciski widoku głównego
     const toggleButton = document.getElementById('toggleBlocking');
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Przyciski widoku ustawień
     const showMainButton = document.getElementById('showMain');
-    const manageRulesButton = document.getElementById('manageRules'); // Nowy przycisk
+    const manageRulesButton = document.getElementById('manageRules'); 
     const resetCustomRulesButton = document.getElementById('resetCustomRules');
     const resetCountButton = document.getElementById('resetCount');
     const downloadButton = document.getElementById('downloadLogs');
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Elementy widoku zarządzania regułami
     const rulesViewHeader = document.getElementById('rulesViewHeader');
     const rulesListContainer = document.getElementById('rulesListContainer');
-    const backToSettingsButton = document.getElementById('backToSettings'); // Nowy przycisk
+    const backToSettingsButton = document.getElementById('backToSettings'); 
 
     // --- ZMIENNE GLOBALNE I STAŁE ---
     let statusTimeout;
