@@ -37,7 +37,7 @@ document.querySelectorAll('*').forEach(el => {
 });
 
 // 5. Użyj MutationObserver, aby obserwować całą stronę i wstrzykiwać style
-//    do każdego NOWO utworzonego komponentu z Shadow DOM. To jest kluczowe!
+//    do każdego NOWO utworzonego komponentu z Shadow DOM
 const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
