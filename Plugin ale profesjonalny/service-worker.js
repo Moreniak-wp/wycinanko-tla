@@ -1,5 +1,5 @@
-// service-worker.js - v30.2
-console.log("WP Ad Inspector (v30.2) - SERVICE WORKER - Initialized.");
+// service-worker.js - v30.3 (stabilna wersja tła)
+console.log("WP Ad Inspector (v30.3) - SERVICE WORKER - Initialized.");
 
 // --- SEKCJA STAŁYCH ---
 const STORAGE_KEYS = {
@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
     BLOCKED_ADS_COUNT: 'blockedAdsCount',
     CUSTOM_RULES_KEY: 'customBlockedSelectors'
 };
+
 const MESSAGE_TYPES = {
     UPDATE_BLOCKING_STATE: 'updateBlockingState',
     AD_BLOCKED: 'AD_BLOCKED',
@@ -17,16 +18,28 @@ const MESSAGE_TYPES = {
     UPDATE_PROXY_SETTINGS: 'updateProxySettings',
     ACTIVATE_PICKER: 'ACTIVATE_PICKER'
 };
+
 const STRINGS = {
-    PROXY: { ENABLED: "Proxy włączone:", DISABLED: "Proxy wyłączone.", SETUP_ERROR: "Błąd konfiguracji proxy:", RESPONSE_UPDATED: "Ustawienia proxy zaktualizowane." },
-    BACKGROUND: { RESPONSE_ICON_UPDATED: "Ikona zaktualizowana.", RESPONSE_AD_COUNTER_UPDATED: "Licznik reklam zaktualizowany.", RESPONSE_AD_COUNTER_RESET: "Licznik reklam zresetowany." }
+    PROXY: {
+        ENABLED: "Proxy włączone:",
+        DISABLED: "Proxy wyłączone.",
+        SETUP_ERROR: "Błąd konfiguracji proxy:",
+        RESPONSE_UPDATED: "Ustawienia proxy zaktualizowane."
+    },
+    BACKGROUND: {
+        RESPONSE_ICON_UPDATED: "Ikona zaktualizowana.",
+        RESPONSE_AD_COUNTER_UPDATED: "Licznik reklam zaktualizowany.",
+        RESPONSE_AD_COUNTER_RESET: "Licznik reklam zresetowany."
+    }
 };
+
 const ICON_PATHS = {
     ENABLED: { "16": "pliki/icons/icon16_active.png", "32": "pliki/icons/icon32_active.png", "48": "pliki/icons/icon48_active.png", "128": "pliki/icons/icon128_active.png" },
     DISABLED: { "16": "pliki/icons/icon16_inactive.png", "32": "pliki/icons/icon32_inactive.png", "48": "pliki/icons/icon48_inactive.png", "128": "pliki/icons/icon128_inactive.png" }
 };
 
-// --- WARSTWA 2: BLOKOWANIE SIECIOWE (declarativeNetRequest) ---
+
+// --- BLOKOWANIE SIECIOWE (declarativeNetRequest) ---
 function setupAdBlockingNetRules() {
     const adBlockingFilters = ["*://*.googlesyndication.com/*","*://*.doubleclick.net/*","*://*.adocean.pl/*","*://*.adocean.net/*","*://*.gemius.pl/*","*://*.gemius.net/*","*://ad.wp.pl/*","*://ads.wp.pl/*","*://www.google-analytics.com/*","*://googletagservices.com/*","*://cdn.ad.plus/*","*://securepubads.g.doubleclick.net/*","*://pagead2.googlesyndication.com/*","*://*.adservice.google.com/*","*://*.advertising.com/*","*://*.adform.net/*","*://*.adroll.com/*","*://*.criteo.com/*","*://*.adnxs.com/*","*://*.taboola.com/*","*://*.outbrain.com/*","*://*.mgid.com/*","*://*.revcontent.com/*","*://*.openx.net/*","*://*.rubiconproject.com/*","*://*.appnexus.com/*","*://*.yieldlab.net/*","*://*.pubmatic.com/*","*://*.bidswitch.net/*","*://*.indexww.com/*","*://*.krxd.net/*","*://*.quantserve.com/*","*://*.scorecardresearch.com/*","*://*.zedo.com/*","*://*.serving-sys.com/*","*://*.innovid.com/*","*://*.demdex.net/*","*://*.dpm.demdex.net/*","*://*.casalemedia.com/*","*://*.specificmedia.com/*","*://*.sharethrough.com/*","*://*.simpli.fi/*","*://*.teads.tv/*","*://*.adition.com/*","*://*.smartadserver.com/*","*://*.adspirit.de/*","*://*.adlibr.com/*","*://*.medianet.com/*","*://*.contextweb.com/*","*://*.pulsepoint.com/*","*://*.gumgum.com/*","*://*.bidthentic.com/*","*://*.advertising.com/*","*://*.tremorhub.com/*","*://*.brightroll.com/*","*://*.freewheel.tv/*","*://*.sizmek.com/*","*://*.spotx.tv/*","*://*.videology.com/*","*://*.verizonmedia.com/*"];
     const rules = adBlockingFilters.map((filter, index) => ({ id: 10000 + index, priority: 1, action: { type: 'block' }, condition: { urlFilter: filter, resourceTypes: ["main_frame", "sub_frame", "stylesheet", "script", "image", "xmlhttprequest", "media"] } }));
@@ -41,7 +54,7 @@ function setupAdBlockingNetRules() {
     });
 }
 
-// --- POZOSTAŁA LOGIKA TŁA (PROXY, OBSŁUGA ZDARZEŃ) ---
+// --- LOGIKA TŁA (PROXY, OBSŁUGA ZDARZEŃ) ---
 async function applyProxySettings() {
     try {
         const storage = await chrome.storage.local.get([STORAGE_KEYS.PROXY_ENABLED, STORAGE_KEYS.PROXY_HOST, STORAGE_KEYS.PROXY_PORT]);
@@ -117,7 +130,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case MESSAGE_TYPES.ACTIVATE_PICKER:
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                if (tabs[0]) {
+                if (tabs[0] && tabs[0].id) {
                     chrome.tabs.sendMessage(tabs[0].id, message, (response) => {
                         if (chrome.runtime.lastError) console.warn("Błąd wysyłania do content script:", chrome.runtime.lastError.message);
                         else sendResponse(response);
@@ -128,5 +141,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     return true; // Ważne dla asynchronicznych odpowiedzi
 });
-console.log("WP Ad Inspector (v30.2) - SERVICE WORKER - Ready.");
-// Koniec service-worker.js
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local') {
+        if (STORAGE_KEYS.IS_BLOCKING_ENABLED in changes) {
+            updateExtensionIcon(changes[STORAGE_KEYS.IS_BLOCKING_ENABLED].newValue);
+        }
+    }
+});

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "WP Ad Inspector",
-  "version": "30.2",
-  "description": "Zaawansowany bloker reklam z filtrowaniem kosmetycznym i sieciowym.",
+  "version": "30.3",
+  "description": "Zaawansowany bloker reklam z trybem 'stealth' do unikania detekcji.",
   "permissions": [
     "storage",
     "declarativeNetRequest",
@@ -32,13 +32,6 @@
     "128": "pliki/icons/icon128_active.png"
   },
   "content_scripts": [
-    {
-      "id": "injector",
-      "matches": ["<all_urls>"],
-      "js": ["injector.js"],
-      "run_at": "document_start",
-      "all_frames": true
-    },
     {
       "id": "remover",
       "matches": ["<all_urls>"],
