@@ -1,34 +1,71 @@
+// popup.js - Zaktualizowany o zarządzanie regułami
+
 document.addEventListener('DOMContentLoaded', () => {
-    const toggleButton = document.getElementById('toggleBlocking');
-    const downloadButton = document.getElementById('downloadLogs');
-    const clearButton = document.getElementById('clearLogs');
-    const resetCountButton = document.getElementById('resetCount');
-    const pickElementButton = document.getElementById('pickElement');
-    const resetCustomRulesButton = document.getElementById('resetCustomRules');
-    const toggleWhitelistButton = document.getElementById('toggleWhitelist');
+    // --- SEKCJA POBIERANIA ELEMENTÓW DOM ---
+    const headerTitle = document.getElementById('headerTitle');
     const statusMessage = document.getElementById('statusMessage');
+
+    // Przyciski i widoki
     const mainView = document.getElementById('main-view');
     const settingsView = document.getElementById('settings-view');
+    const rulesView = document.getElementById('rules-view'); // Nowy widok
+
+    // Przyciski widoku głównego
+    const toggleButton = document.getElementById('toggleBlocking');
+    const toggleWhitelistButton = document.getElementById('toggleWhitelist');
+    const pickElementButton = document.getElementById('pickElement');
     const showSettingsButton = document.getElementById('showSettings');
+    
+    // Przyciski widoku ustawień
     const showMainButton = document.getElementById('showMain');
-    const headerTitle = document.getElementById('headerTitle');
+    const manageRulesButton = document.getElementById('manageRules'); // Nowy przycisk
+    const resetCustomRulesButton = document.getElementById('resetCustomRules');
+    const resetCountButton = document.getElementById('resetCount');
+    const downloadButton = document.getElementById('downloadLogs');
+    const clearButton = document.getElementById('clearLogs');
+
+    // Elementy widoku zarządzania regułami
+    const rulesViewHeader = document.getElementById('rulesViewHeader');
+    const rulesListContainer = document.getElementById('rulesListContainer');
+    const backToSettingsButton = document.getElementById('backToSettings'); // Nowy przycisk
+
+    // --- ZMIENNE GLOBALNE I STAŁE ---
     let statusTimeout;
-    const BLOCKING_STATE_KEY = 'isBlockingEnabled';
-    const CUSTOM_RULES_KEY = 'customBlockedSelectors';
-    const WHITELIST_KEY = 'whitelistedDomains';
+    const { CUSTOM_RULES_KEY, WHITELIST_KEY, IS_BLOCKING_ENABLED } = STORAGE_KEYS;
+
+    // --- FUNKCJE INICJALIZACYJNE I POMOCNICZE ---
+
+    /**
+     * Ustawia początkowe teksty interfejsu na podstawie pliku strings.js
+     */
     function initializeUI() {
         document.title = STRINGS.POPUP.TITLE;
         headerTitle.textContent = STRINGS.POPUP.HEADER;
+        
+        // Widok główny
         toggleButton.textContent = STRINGS.POPUP.LOADING;
         toggleWhitelistButton.textContent = STRINGS.POPUP.WHITELIST_BUTTON_DEFAULT;
-        showSettingsButton.textContent = STRINGS.POPUP.SETTINGS_SHOW;
         pickElementButton.textContent = STRINGS.POPUP.SETTINGS_PICK_ELEMENT;
+        showSettingsButton.textContent = STRINGS.POPUP.SETTINGS_SHOW;
+        
+        // Widok ustawień
+        manageRulesButton.textContent = STRINGS.POPUP.SETTINGS_MANAGE_RULES;
         resetCustomRulesButton.textContent = STRINGS.POPUP.SETTINGS_RESET_CUSTOM_RULES;
         resetCountButton.textContent = STRINGS.POPUP.SETTINGS_RESET_COUNTER;
         downloadButton.textContent = STRINGS.POPUP.SETTINGS_DOWNLOAD_LOGS;
         clearButton.textContent = STRINGS.POPUP.SETTINGS_CLEAR_LOGS;
         showMainButton.textContent = STRINGS.POPUP.SETTINGS_BACK;
+
+        // Widok reguł
+        rulesViewHeader.textContent = STRINGS.POPUP.RULES_VIEW_HEADER;
+        backToSettingsButton.textContent = STRINGS.POPUP.SETTINGS_BACK;
     }
+
+    /**
+     * Wyświetla komunikat dla użytkownika na określony czas.
+     * @param {string} message - Treść komunikatu.
+     * @param {number} [duration=2500] - Czas wyświetlania w milisekundach.
+     */
     function showStatus(message, duration = 2500) {
         clearTimeout(statusTimeout);
         statusMessage.textContent = message;
@@ -38,7 +75,28 @@ document.addEventListener('DOMContentLoaded', () => {
             statusMessage.style.opacity = '0';
         }, duration);
     }
-    function updateButtonState(isEnabled) {
+
+    /**
+     * Odświeża aktywną kartę w przeglądarce.
+     * @param {number} [delay=500] - Opóźnienie przed odświeżeniem.
+     */
+    function reloadCurrentTab(delay = 500) {
+        setTimeout(() => {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0] && tabs[0].id) {
+                    chrome.tabs.reload(tabs[0].id);
+                }
+            });
+        }, delay);
+    }
+
+    // --- FUNKCJE AKTUALIZACJI STANU UI ---
+
+    /**
+     * Aktualizuje wygląd i treść przycisku włączania/wyłączania blokowania.
+     * @param {boolean} isEnabled - Czy blokowanie jest aktywne.
+     */
+    function updateToggleButtonState(isEnabled) {
         if (isEnabled) {
             toggleButton.textContent = STRINGS.POPUP.TOGGLE_ENABLED;
             toggleButton.className = 'enabled';
@@ -46,74 +104,126 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleButton.textContent = STRINGS.POPUP.TOGGLE_DISABLED;
             toggleButton.className = 'disabled';
         }
-        chrome.runtime.sendMessage({ type: "updateBlockingState", isEnabled: isEnabled });
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.UPDATE_BLOCKING_STATE, isEnabled: isEnabled });
     }
+
+    /**
+     * Aktualizuje przycisk białej listy na podstawie bieżącej domeny.
+     * @param {string} hostname - Hostname bieżącej karty.
+     * @param {string[]} whitelistedDomains - Tablica domen z białej listy.
+     */
     function updateWhitelistButton(hostname, whitelistedDomains) {
         if (whitelistedDomains.includes(hostname)) {
             toggleWhitelistButton.textContent = STRINGS.POPUP.WHITELIST_REMOVE;
-            toggleWhitelistButton.className = 'whitelisted';
+            toggleWhitelistButton.className = 'whitelisted btn-primary';
         } else {
             toggleWhitelistButton.textContent = STRINGS.POPUP.WHITELIST_ADD;
-            toggleWhitelistButton.className = 'not-whitelisted';
+            toggleWhitelistButton.className = 'not-whitelisted btn-primary';
         }
+    }
+
+    // --- NOWA LOGIKA: ZARZĄDZANIE REGUŁAMI ---
+    
+    /**
+     * Generuje i wyświetla listę własnych reguł użytkownika.
+     */
+    function populateRulesList() {
+        chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] }, (result) => {
+            const customRules = result[CUSTOM_RULES_KEY];
+            rulesListContainer.innerHTML = ''; // Wyczyść kontener
+
+            if (customRules.length === 0) {
+                rulesListContainer.innerHTML = `<div class="rules-empty-message">${STRINGS.POPUP.RULES_VIEW_EMPTY}</div>`;
+                return;
+            }
+
+            customRules.forEach(ruleSelector => {
+                const ruleItem = document.createElement('div');
+                ruleItem.className = 'rule-item';
+
+                const selectorSpan = document.createElement('span');
+                selectorSpan.className = 'rule-selector';
+                selectorSpan.textContent = ruleSelector;
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'delete-rule-btn';
+                deleteButton.textContent = STRINGS.POPUP.RULES_VIEW_DELETE_RULE;
+
+                deleteButton.addEventListener('click', () => {
+                    deleteRule(ruleSelector);
+                });
+
+                ruleItem.appendChild(selectorSpan);
+                ruleItem.appendChild(deleteButton);
+                rulesListContainer.appendChild(ruleItem);
+            });
+        });
+    }
+
+    /**
+     * Usuwa wybraną regułę ze storage i odświeża widok.
+     * @param {string} ruleSelector - Selektor reguły do usunięcia.
+     */
+    function deleteRule(ruleSelector) {
+        chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] }, (result) => {
+            let customRules = result[CUSTOM_RULES_KEY];
+            customRules = customRules.filter(rule => rule !== ruleSelector);
+            
+            chrome.storage.local.set({ [CUSTOM_RULES_KEY]: customRules }, () => {
+                showStatus(STRINGS.POPUP.STATUS_RULE_DELETED);
+                populateRulesList(); 
+                reloadCurrentTab(); 
+            });
+        });
     }
     initializeUI();
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const currentTab = tabs[0];
-        if (currentTab && currentTab.url && currentTab.url.startsWith('http')) {
-            const url = new URL(currentTab.url);
-            const currentHostname = url.hostname;
-            chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true, [WHITELIST_KEY]: [] }, (result) => {
-                updateButtonState(result[BLOCKING_STATE_KEY]);
-                updateWhitelistButton(currentHostname, result[WHITELIST_KEY]);
-            });
-        } else {
-            toggleWhitelistButton.disabled = true;
-            toggleWhitelistButton.textContent = STRINGS.POPUP.WHITELIST_NOT_APPLICABLE;
-            chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
-                updateButtonState(result[BLOCKING_STATE_KEY]);
-            });
-        }
+        const isHttpPage = currentTab && currentTab.url && currentTab.url.startsWith('http');
+
+        chrome.storage.local.get({ [IS_BLOCKING_ENABLED]: true, [WHITELIST_KEY]: [] }, (result) => {
+            updateToggleButtonState(result[IS_BLOCKING_ENABLED]);
+            if (isHttpPage) {
+                const url = new URL(currentTab.url);
+                updateWhitelistButton(url.hostname, result[WHITELIST_KEY]);
+            } else {
+                toggleWhitelistButton.disabled = true;
+                toggleWhitelistButton.textContent = STRINGS.POPUP.WHITELIST_NOT_APPLICABLE;
+            }
+        });
     });
+
     showSettingsButton.addEventListener('click', () => {
         mainView.style.display = 'none';
         settingsView.style.display = 'block';
     });
+
     showMainButton.addEventListener('click', () => {
         settingsView.style.display = 'none';
         mainView.style.display = 'block';
     });
- toggleButton.addEventListener('click', () => {
-    chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true }, (result) => {
-        const currentState = result[BLOCKING_STATE_KEY];
-        const newState = !currentState
-        chrome.storage.local.set({ [BLOCKING_STATE_KEY]: newState }, () => {
-            updateButtonState(newState);
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                if (tabs[0] && tabs[0].id) {
-                    chrome.tabs.reload(tabs[0].id);
-                }
+
+    manageRulesButton.addEventListener('click', () => {
+        settingsView.style.display = 'none';
+        rulesView.style.display = 'block';
+        populateRulesList(); 
+    });
+
+    backToSettingsButton.addEventListener('click', () => {
+        rulesView.style.display = 'none';
+        settingsView.style.display = 'block';
+    });
+
+    toggleButton.addEventListener('click', () => {
+        chrome.storage.local.get({ [IS_BLOCKING_ENABLED]: true }, (result) => {
+            const newState = !result[IS_BLOCKING_ENABLED];
+            chrome.storage.local.set({ [IS_BLOCKING_ENABLED]: newState }, () => {
+                updateToggleButtonState(newState);
+                reloadCurrentTab();
             });
         });
     });
-});
 
-    pickElementButton.addEventListener('click', () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0] && tabs[0].id) {
-                chrome.tabs.sendMessage(tabs[0].id, { type: "ACTIVATE_PICKER" }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        showStatus(STRINGS.POPUP.STATUS_PICKER_UNAVAILABLE, 3500);
-                    } else {
-                        console.log(response.status);
-                        window.close();
-                    }
-                });
-            } else {
-                 showStatus(STRINGS.POPUP.STATUS_PICKER_NO_TAB, 3000);
-            }
-        });
-    });
     toggleWhitelistButton.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const currentTab = tabs[0];
@@ -126,30 +236,53 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.storage.local.get({ [WHITELIST_KEY]: [] }, (result) => {
                 let whitelistedDomains = result[WHITELIST_KEY];
                 const isWhitelisted = whitelistedDomains.includes(currentHostname);
-                let statusMessage;
+                
+                let statusMsg;
                 if (isWhitelisted) {
                     whitelistedDomains = whitelistedDomains.filter(domain => domain !== currentHostname);
-                    statusMessage = STRINGS.POPUP.STATUS_WHITELIST_REMOVED(currentHostname);
+                    statusMsg = STRINGS.POPUP.STATUS_WHITELIST_REMOVED(currentHostname);
                 } else {
                     whitelistedDomains.push(currentHostname);
-                    statusMessage = STRINGS.POPUP.STATUS_WHITELIST_ADDED(currentHostname);
+                    statusMsg = STRINGS.POPUP.STATUS_WHITELIST_ADDED(currentHostname);
                 }
-                showStatus(statusMessage);
+
                 chrome.storage.local.set({ [WHITELIST_KEY]: whitelistedDomains }, () => {
                     updateWhitelistButton(currentHostname, whitelistedDomains);
-                    setTimeout(() => {
-                        if (currentTab && currentTab.id) {
-                            chrome.tabs.reload(currentTab.id);
-                        }
-                    }, 500);
+                    showStatus(statusMsg);
+                    reloadCurrentTab();
                 });
             });
         });
     });
+
+    pickElementButton.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0] && tabs[0].id) {
+                chrome.tabs.sendMessage(tabs[0].id, { type: MESSAGE_TYPES.ACTIVATE_PICKER }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        showStatus(STRINGS.POPUP.STATUS_PICKER_UNAVAILABLE, 3500);
+                    } else {
+                        console.log(response.status);
+                        window.close(); 
+                    }
+                });
+            } else {
+                 showStatus(STRINGS.POPUP.STATUS_PICKER_NO_TAB, 3000);
+            }
+        });
+    });
+
+    resetCustomRulesButton.addEventListener('click', () => {
+        chrome.storage.local.remove(CUSTOM_RULES_KEY, () => {
+            showStatus(STRINGS.POPUP.STATUS_CUSTOM_RULES_RESET);
+            reloadCurrentTab(1000);
+        });
+    });
+
     downloadButton.addEventListener('click', () => {
-        chrome.storage.local.get(['inspector_logs'], (result) => {
-            if (result.inspector_logs && result.inspector_logs.length > 0) {
-                const logs = result.inspector_logs;
+        chrome.storage.local.get([STORAGE_KEYS.INSPECTOR_LOGS], (result) => {
+            const logs = result[STORAGE_KEYS.INSPECTOR_LOGS];
+            if (logs && logs.length > 0) {
                 const formattedLogs = STRINGS.POPUP.LOG_FILE_HEADER + logs.join('\n');
                 const blob = new Blob([formattedLogs], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
@@ -167,26 +300,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
     clearButton.addEventListener('click', () => {
-        chrome.storage.local.remove('inspector_logs', () => {
+        chrome.storage.local.remove(STORAGE_KEYS.INSPECTOR_LOGS, () => {
              showStatus(STRINGS.POPUP.STATUS_LOGS_CLEARED);
         });
     });
+
     resetCountButton.addEventListener('click', () => {
-        chrome.runtime.sendMessage({ type: "RESET_AD_COUNT" }, (response) => {
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.RESET_AD_COUNT }, () => {
              showStatus(STRINGS.POPUP.STATUS_COUNTER_RESET);
-        });
-    });
-    resetCustomRulesButton.addEventListener('click', () => {
-        chrome.storage.local.remove(CUSTOM_RULES_KEY, () => {
-            showStatus(STRINGS.POPUP.STATUS_CUSTOM_RULES_RESET);
-            setTimeout(() => {
-                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                    if (tabs[0] && tabs[0].id) {
-                        chrome.tabs.reload(tabs[0].id);
-                    }
-                });
-            }, 1000); 
         });
     });
 });
