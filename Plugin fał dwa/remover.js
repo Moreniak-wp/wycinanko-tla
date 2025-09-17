@@ -1,10 +1,34 @@
-// remover.js 
-console.log("WP Ad Inspector (v28.2) - CONTROLLER - Initialized.");
+// remover.js v30.3 - Wersja "Duch"
+console.log("WP Ad Inspector (v30.3) - REMOVER/STEALTH - Initialized.");
 
+// --- BROŃ NR 1: MECHANIZM ANTY-ANTY-ADBLOCK ("KŁAMCA") ---
+try {
+    const originalGetComputedStyle = window.getComputedStyle;
+    window.getComputedStyle = function(element, pseudoElt) {
+        const baitSelectors = ['.adsbygoogle', '[class*="ad-"]', '[id*="-ad-"]', '[id*="adocean"]'];
+        if (element && baitSelectors.some(selector => element.matches(selector))) {
+            if (element.style.display === 'none') {
+                const originalStyle = originalGetComputedStyle.call(this, element, pseudoElt);
+                return new Proxy(originalStyle, {
+                    get: function(target, prop) {
+                        if (prop === 'display' || prop === 'visibility') {
+                            return 'block'; // Kłamiemy, że element jest widoczny.
+                        }
+                        return Reflect.get(target, prop);
+                    }
+                });
+            }
+        }
+        return originalGetComputedStyle.call(this, element, pseudoElt);
+    };
+    console.log("WP Ad Inspector: Mechanizm Anty-Anty-Adblock jest AKTYWNY.");
+} catch(e) { console.error("Nie udało się aktywować ochrony przed wykrywaniem.", e); }
+
+
+// --- SEKCJA KONFIGURACJI I ZMIENNYCH GLOBALNYCH (z v28.2) ---
 const BLOCKING_STATE_KEY = 'isBlockingEnabled';
 const CUSTOM_RULES_KEY = 'customBlockedSelectors';
 const WHITELIST_KEY = 'whitelistedDomains';
-
 const MONITORED_AD_SELECTORS = [
     '[id^="google_ads_iframe_"]', '[id^="div-gpt-ad-"]', '.adsbygoogle',
     '[id*="adocean"]', '[id*="gemius"]', '[data-ad-placeholder]', '[data-ad-slot]',
@@ -13,10 +37,11 @@ const MONITORED_AD_SELECTORS = [
     'a[href*="doubleclick.net"]', 'a[href*="ad.wp.pl"]'
 ];
 const elementProxyMap = new WeakMap();
-
 let isPickerActive = false;
 let highlightedElement = null;
 
+
+// --- SEKCJA FUNKCJI (z v28.2) ---
 function logEvent(message, element = null, isAdBlocked = false) {
     const timestamp = new Date().toLocaleTimeString();
     let logMessage = `[${timestamp}] ${message}`;
@@ -27,6 +52,7 @@ function logEvent(message, element = null, isAdBlocked = false) {
         logMessage += ` | Element: ${tag}${id}${classes}`;
     }
     console.log(`[WP Ad Inspector] ${logMessage}`, element || '');
+
     chrome.storage.local.get(['inspector_logs'], (result) => {
         const logs = result.inspector_logs || [];
         logs.push(logMessage);
@@ -35,10 +61,14 @@ function logEvent(message, element = null, isAdBlocked = false) {
 
     if (isAdBlocked) {
         chrome.runtime.sendMessage({ type: "AD_BLOCKED" }).catch(error => {
-            console.error("Błąd podczas wysyłania wiadomosci AD_BLOCKED:", error);
+            if (!error.message.includes("Receiving end does not exist")) {
+                 console.error("Błąd podczas wysyłania wiadomosci AD_BLOCKED:", error);
+            }
         });
     }
 }
+
+// --- SEKCJA WARSTW OCHRONY PRZED REKLAMAMI (z v28.2) ---
 function interceptEventHandlers() {
     const originalAddEventListener = Element.prototype.addEventListener;
     const monitoredEvents = ['click', 'mousedown', 'mouseup', 'touchstart'];
@@ -54,6 +84,7 @@ function interceptEventHandlers() {
     };
     logEvent("Init: Warstwa 1 (EventHandler-Guard) jest aktywna.");
 }
+
 async function applyPropertyGuardToElements() {
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const allSelectors = [...new Set([...MONITORED_AD_SELECTORS, ...result[CUSTOM_RULES_KEY]])];
@@ -74,6 +105,7 @@ async function applyPropertyGuardToElements() {
         });
     });
 }
+
 function applyTrueProxyGuard() {
     const selectorsString = MONITORED_AD_SELECTORS.join(',');
     const elementsToProxy = document.querySelectorAll(selectorsString);
@@ -82,7 +114,6 @@ function applyTrueProxyGuard() {
         if (elementProxyMap.has(el)) {
             return;
         }
-
         const handler = {
             set: function(target, prop, value) {
                 const eventProperties = ['onclick', 'onmousedown', 'onmouseup', 'ontouchstart'];
@@ -94,13 +125,12 @@ function applyTrueProxyGuard() {
                 return Reflect.set(target, prop, value);
             }
         };
-
         const proxy = new Proxy(el, handler);
         elementProxyMap.set(el, proxy);
     });
 }
 
-
+// --- SEKCJA FUNKCJI "PICKERA" (z v28.2) ---
 function generateSelector(el) {
     if (!(el instanceof Element)) return null;
     const root = el.getRootNode();
@@ -133,15 +163,15 @@ function generateSelector(el) {
 
 async function saveNewCustomRule(selector) {
     if (!selector) return;
-    logEvent(`Picker: Saving rule for selector: ${selector}`);
+    logEvent(`Picker: Zapisywanie reguły dla selektora: ${selector}`);
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
     if (!customRules.includes(selector)) {
         customRules.push(selector);
         await chrome.storage.local.set({ [CUSTOM_RULES_KEY]: customRules });
-        logEvent(`Picker: New rule saved. Total custom rules: ${customRules.length}`);
+        logEvent(`Picker: Zapisano nową regułę. Całkowita liczba reguł niestandardowych: ${customRules.length}`);
     } else {
-        logEvent(`Picker: Rule already exists. No action taken.`);
+        logEvent(`Picker: Reguła już istnieje. Nie podjęto żadnej akcji.`);
     }
 }
 
@@ -155,19 +185,19 @@ function handleElementSelection(e) {
     try {
         const root = trueTarget.getRootNode();
         if (root instanceof ShadowRoot) {
-            logEvent("Picker: Shadow DOM detected. Targeting host element.", root.host);
+            logEvent("Picker: Wykryto Shadow DOM. Celuję w element-hosta.", root.host);
             elementToRemove = root.host;
         }
         selector = generateSelector(elementToRemove);
     } catch (err) {
-        logEvent(`!!! Picker Error: Failed during element analysis. Fallback to removing true target. Error: ${err.message}`);
+        logEvent(`!!! Błąd Pickera: Nie udało się przeanalizować elementu. Awaryjne usuwanie celu. Błąd: ${err.message}`);
         elementToRemove = trueTarget;
     }
     if (elementToRemove && elementToRemove.remove) {
         elementToRemove.remove();
-        logEvent("Picker: Element removed successfully.", elementToRemove);
+        logEvent("Picker: Element usunięty pomyślnie.", elementToRemove);
     } else {
-        logEvent("Picker: FAILED to remove element.", elementToRemove);
+        logEvent("Picker: NIE udało się usunąć elementu.", elementToRemove);
     }
     deactivatePicker();
     saveNewCustomRule(selector);
@@ -178,9 +208,7 @@ function handleMouseOver(e) {
     const trueTarget = e.composedPath && e.composedPath()[0] || e.target;
     if (highlightedElement === trueTarget) return;
     if (highlightedElement) {
-        try {
-            highlightedElement.style.outline = '';
-        } catch (e) {  }
+        try { highlightedElement.style.outline = ''; } catch (e) { }
     }
     highlightedElement = trueTarget;
     highlightedElement.style.outline = '3px dashed #FF00FF';
@@ -189,7 +217,7 @@ function handleMouseOver(e) {
 function activatePicker() {
     if (isPickerActive) return;
     isPickerActive = true;
-    logEvent("Picker: Activated.");
+    logEvent("Picker: Aktywowano.");
     document.addEventListener('mouseover', handleMouseOver, true);
     document.addEventListener('mousedown', handleElementSelection, true);
     document.addEventListener('click', handleElementSelection, true);
@@ -199,16 +227,15 @@ function deactivatePicker() {
     if (!isPickerActive) return;
     isPickerActive = false;
     if (highlightedElement) {
-        try {
-            highlightedElement.style.outline = '';
-        } catch (e) { }
+        try { highlightedElement.style.outline = ''; } catch (e) { }
     }
     document.removeEventListener('mouseover', handleMouseOver, true);
     document.removeEventListener('mousedown', handleElementSelection, true);
     document.removeEventListener('click', handleElementSelection, true);
-    logEvent("Picker: Deactivated.");
+    logEvent("Picker: Deaktywowano.");
 }
 
+// --- SEKCJA GŁÓWNYCH MECHANIZMÓW BLOKUJĄCYCH W DOM (z v28.2) ---
 async function applyCustomRules() {
     const result = await chrome.storage.local.get({ [CUSTOM_RULES_KEY]: [] });
     const customRules = result[CUSTOM_RULES_KEY];
@@ -228,7 +255,7 @@ async function applyCustomRules() {
                 }
             });
         } catch (e) {
-            logEvent(`CustomRule Error: Invalid selector '${selector}'.`);
+            logEvent(`Błąd reguły niestandardowej: Nieprawidłowy selektor '${selector}'.`);
         }
     }
 }
@@ -237,7 +264,7 @@ function hidePrimaryAds() {
     document.querySelectorAll(MONITORED_AD_SELECTORS.join(',')).forEach(element => {
         const target = element.closest('div, ins, iframe, a');
         if (target && target.parentElement && target.style.display !== 'none') {
-            logEvent("PrimaryDetection: Hiding generic ad element.", target, true);
+            logEvent("Wykrywanie Główne: Ukrywanie generycznego elementu reklamowego.", target, true);
             target.style.setProperty('display', 'none', 'important');
         }
     });
@@ -266,11 +293,11 @@ function hideFallbackAds() {
             const textContent = container.textContent.toLowerCase();
             const hasAdKeywords = AD_KEYWORDS.some(keyword => textContent.includes(keyword.toLowerCase()));
             if (hasAdKeywords) {
-                logEvent(`HunterGuard: Hiding container with ad keywords despite content tags.`, container, true);
+                logEvent(`HunterGuard: Ukrywanie kontenera ze słowami reklamowymi pomimo obecności tagów treści.`, container, true);
                 container.style.setProperty('display', 'none', 'important');
             }
         } else {
-            logEvent("FallbackDetection (Hunter): Hiding ad-only container.", container, true);
+            logEvent("Wykrywanie Awaryjne (Hunter): Ukrywanie kontenera wyłącznie z reklamą.", container, true);
             container.style.setProperty('display', 'none', 'important');
         }
     });
@@ -288,58 +315,48 @@ function hidePlaceholders() {
 function applySafetyNet() {
     const CRITICAL_SELECTORS = ['body', '#wp-site-main', 'main', '#page', '#app', '#root'];
     CRITICAL_SELECTORS.forEach(selector => {
-        const element = document.querySelector(selector);
-        if (element && getComputedStyle(element).display === 'none') {
-            element.style.setProperty('display', 'block', 'important');
-            logEvent(`!!! SafetyNet TRIGGERED: Critical element '${selector}' was hidden, visibility restored.`);
-        }
+        try {
+            const element = document.querySelector(selector);
+            if (element && window.getComputedStyle(element).display === 'none') {
+                element.style.setProperty('display', 'block', 'important');
+                logEvent(`!!! SafetyNet URUCHOMIONY: Krytyczny element '${selector}' był ukryty, widoczność przywrócona.`);
+            }
+        } catch (e) { /* Może się zdarzyć, że getComputedStyle rzuci błędem na wczesnym etapie */ }
     });
 }
 
+
+// --- GŁÓWNA PĘTLA I INICJALIZACJA ---
 async function runAllRoutines() {
     const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true, [WHITELIST_KEY]: [] });
-    if (!result[BLOCKING_STATE_KEY]) {
-        if (!window.blockingDisabledLogged) {
-            logEvent("Controller: Blocking is disabled by user. Skipping all routines.");
-            window.blockingDisabledLogged = true;
-        }
+    if (!result[BLOCKING_STATE_KEY] || (result[WHITELIST_KEY] && result[WHITELIST_KEY].includes(window.location.hostname))) {
         return; 
     }
-    const whitelistedDomains = result[WHITELIST_KEY];
-    const currentHostname = window.location.hostname;
-    if (whitelistedDomains.includes(currentHostname)) {
-        if (!window.whitelistMessageLogged) { 
-            logEvent(`Controller: Domain '${currentHostname}' is on the whitelist. Skipping all routines.`);
-            window.whitelistMessageLogged = true;
-        }
-        return; 
-    }
-    if(window.whitelistMessageLogged) {
-         window.whitelistMessageLogged = false;
-    }
-    if (window.blockingDisabledLogged) {
-        window.blockingDisabledLogged = false;
-    }
-
     await applyCustomRules();
-    await applyPropertyGuardToElements(); 
-    applyTrueProxyGuard();              
+    await applyPropertyGuardToElements();
+    applyTrueProxyGuard();
     hidePrimaryAds();
     hideFallbackAds();
     hidePlaceholders();
     applySafetyNet();
 }
 
+// Uruchomienie Warstwy 1 natychmiast.
 interceptEventHandlers();
+// Pierwsze uruchomienie od razu.
+runAllRoutines();
 
-setTimeout(async () => {
-    const result = await chrome.storage.local.get({ [BLOCKING_STATE_KEY]: true });
-    logEvent(`Init: Script v28.2 (Shadow of the PIPIS) started. Blocking is currently ${result[BLOCKING_STATE_KEY] ? 'ENABLED' : 'DISABLED'}.`);
-    await runAllRoutines();
-}, 500);
+// --- BROŃ NR 2: BŁYSKAWICZNY REAKTOR (MutationObserver) ---
+const observer = new MutationObserver((mutations) => {
+    runAllRoutines();
+});
+observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+});
+console.log("WP Ad Inspector: Błyskawiczny Reaktor (MutationObserver) jest AKTYWNY.");
 
-setInterval(runAllRoutines, 1500);
-
+// Listener na wiadomości.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "ACTIVATE_PICKER") {
         activatePicker();
@@ -347,5 +364,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 });
+chrome.runtime.sendMessage({ type: "CONTENT_SCRIPT_LOADED" }).catch(error => {
+    if (!error.message.includes("Receiving end does not exist")) {
+         console.error("Błąd podczas wysyłania wiadomosci CONTENT_SCRIPT_LOADED:", error);
+    }
+});
 
-logEvent("Init: Safe polling mechanism for all routines is now active.");
+// Końcowy log.
+console.log("WP Ad Inspector (v30.3) - REMOVER/STEALTH - Wszystkie mechanizmy aktywne.");
