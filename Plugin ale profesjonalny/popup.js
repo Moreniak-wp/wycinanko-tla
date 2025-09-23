@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetCustomRulesButton = document.getElementById('resetCustomRules');
     const resetCountButton = document.getElementById('resetCount');
     const downloadButton = document.getElementById('downloadLogs');
-    const clearButton = document.getElementById('clearLog`s');
+    const clearButton = document.getElementById('clearLogs');
 
     // Elementy widoku zarządzania regułami
     const rulesViewHeader = document.getElementById('rulesViewHeader');
